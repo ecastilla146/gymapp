@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kronos - Panel de Cliente</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"> </head>
+<body>
+    <header>
+        <h1>Panel de Cliente</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Inicio</a></li>
+                <li><a th:href="@{/logout}">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div sec:authorize="hasRole('CLIENT')">
+            <h2>Bienvenido, Cliente <span sec:authentication="name"></span>!</h2>
+            <p>Aquí puedes ver tu progreso, clases, etc.</p>
+            </div>
+        <div sec:authorize="!hasRole('CLIENT')">
+            <p>No tienes permiso para acceder a esta página.</p>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Kronos Gym. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

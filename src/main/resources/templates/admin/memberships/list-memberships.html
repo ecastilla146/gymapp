@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Membresías</title>
+    <!-- Enlace al CSS que pusiste en static -->
+    <link rel="stylesheet" th:href="@{/css/memberships.css}">
+    <!-- Iconos Font Awesome si los usas -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<section th:fragment="content" class="dashboard-section">
+    <h3><i class="fas fa-credit-card"></i> Gestión de Membresías</h3>
+
+    <a th:href="@{/admin/memberships/new}" class="btn-primary">
+        <i class="fas fa-plus-circle"></i> Nueva Membresía
+    </a>
+
+    <div th:if="${successMessage}" class="alert success">
+        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert error">
+        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Plan</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Vencimiento</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                    <th>Método de Pago</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="membership : ${memberships}">
+                    <td th:text="${membership.id}">1</td>
+                    <td th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Juan Pérez</td>
+                    <td th:text="${membership.membershipPlan.name}">Mensual</td>
+                    <td th:text="${#temporals.format(membership.startDate, 'dd-MM-yyyy')}">01-01-2024</td>
+                    <td th:text="${#temporals.format(membership.endDate, 'dd-MM-yyyy')}">01-02-2024</td>
+                    <td th:text="${#numbers.formatCurrency(membership.amount)}">$30.00</td>
+                    <td>
+                        <span class="membership-status-label" th:classappend="'enabled-' + ${membership.status}" th:text="${membership.status}"></span>
+                    </td>
+                    <td th:text="${membership.paymentMethod}">Tarjeta</td>
+                    <td class="action-buttons">
+                        <a th:href="@{/admin/memberships/edit/{id}(id=${membership.id})}" class="btn-edit" title="Editar">
+                            <i class="fas fa-edit"></i> <span class="action-text">Editar</span>
+                        </a>
+                        <a th:href="@{/admin/memberships/details/{id}(id=${membership.id})}" class="btn-details" title="Ver Detalles">
+                            <i class="fas fa-eye"></i> <span class="action-text">Ver</span>
+                        </a>
+                        <form th:action="@{/admin/memberships/delete/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta membresía?');" style="display:inline;">
+                            <button type="submit" class="btn-delete" title="Eliminar"><i class="fas fa-trash-alt"></i> <span class="action-text">Eliminar</span></button>
+                        </form>
+                        <form th:action="@{/admin/memberships/renew/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres renovar esta membresía? Esto actualizará su fecha de inicio y vencimiento a partir de hoy.');" style="display:inline;">
+                            <button type="submit" class="btn-renew" title="Renovar" th:if="${membership.status.name() != ''}">
+                                <i class="fas fa-sync-alt"></i> <span class="action-text">Renovar</span>
+                            </button>
+                        </form>
+                        <a href="#" class="btn-receipt" title="Generar Recibo" onclick="alert('Funcionalidad de generar recibo en desarrollo.');">
+                            <i class="fas fa-receipt"></i> <span class="action-text">Recibo</span>
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(memberships)}">
+                    <td colspan="9" style="text-align: center;">No hay membresías registradas.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+</body>
+</html>

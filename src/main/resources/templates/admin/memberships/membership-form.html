@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{admin/layout-admin}">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${membership.id == null ? 'Registrar Membresía' : 'Editar Membresía'} + ' - Kronos Gym'"></title>
+</head>
+<body>
+
+<section th:fragment="content" class="dashboard-section">
+    <h3 th:text="${membership.id == null ? 'Registrar Nueva Membresía' : 'Editar Membresía'}"></h3>
+
+    <div th:if="${errorMessage}" class="alert error">
+        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+    </div>
+
+    <div class="form-container">
+        <form th:action="@{/admin/memberships/save}" th:object="${membership}" method="post">
+            <input type="hidden" th:field="*{id}" />
+
+            <div class="form-group">
+                <label for="userId">Cliente:</label>
+                <select id="userId" th:field="*{userId}" required>
+                    <option value="">-- Seleccione un cliente --</option>
+                    <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.firstName + ' ' + user.lastName + ' (' + user.username + ')'}"></option>
+                </select>
+                <span th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="membershipPlanId">Plan de Membresía:</label>
+                <select id="membershipPlanId" th:field="*{membershipPlanId}" required>
+                    <option value="">-- Seleccione un plan --</option>
+                    <option th:each="plan : ${membershipPlans}" th:value="${plan.id}" th:text="${plan.name + ' - $' + #numbers.formatDecimal(plan.price, 1, 2) + ' (' + plan.durationMonths + ' meses)'}"></option>
+                </select>
+                <span th:if="${#fields.hasErrors('membershipPlanId')}" th:errors="*{membershipPlanId}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="startDate">Fecha de Inicio:</label>
+                <input type="date" id="startDate" th:field="*{startDate}" required onchange="calculateEndDate()">
+                <span th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="endDate">Fecha de Vencimiento:</label>
+                <input type="date" id="endDate" th:field="*{endDate}" readonly required>
+                <span th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Monto:</label>
+                <input type="number" id="amount" th:field="*{amount}" step="0.01" min="0.01" required>
+                <span th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="status">Estado:</label>
+                <select id="status" th:field="*{status}" required>
+                    <option value="">-- Seleccione un estado --</option>
+                    <option th:each="status : ${membershipStatuses}" th:value="${status}" th:text="${status}"></option>
+                </select>
+                <span th:if="${#fields.hasErrors('status')}" th:errors="*{status}" class="error-message"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentMethod">Método de Pago:</label>
+                <select id="paymentMethod" th:field="*{paymentMethod}" required>
+                    <option value="">-- Seleccione un método --</option>
+                    <option th:each="method : ${paymentMethods}" th:value="${method}" th:text="${method}"></option>
+                </select>
+                <span th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}" class="error-message"></span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i> Guardar Membresía
+                </button>
+                <a th:href="@{/admin/memberships}" class="btn-cancel">
+                    <i class="fas fa-times-circle"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script th:src="@{/js/admin-dashboard.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const membershipPlanIdSelect = document.getElementById('membershipPlanId');
+        const startDateInput = document.getElementById('startDate');
+
+        if (membershipPlanIdSelect.value && startDateInput.value) {
+            calculateEndDate();
+        }
+
+        membershipPlanIdSelect.addEventListener('change', calculateEndDate);
+    });
+
+    function calculateEndDate() {
+        const membershipPlanId = document.getElementById('membershipPlanId').value;
+        const startDateStr = document.getElementById('startDate').value;
+        const endDateInput = document.getElementById('endDate');
+        const amountInput = document.getElementById('amount');
+
+        if (membershipPlanId && startDateStr) {
+            const startDate = new Date(startDateStr + 'T00:00:00');
+
+            fetch(`/admin/memberships/getPlanDuration/${membershipPlanId}`)
+                .then(response => response.json())
+                .then(durationMonths => {
+                    const endDate = new Date(startDate);
+                    endDate.setMonth(startDate.getMonth() + durationMonths);
+                    endDate.setDate(endDate.getDate() - 1);
+                    endDateInput.value = endDate.toISOString().split('T')[0];
+                })
+                .catch(() => endDateInput.value = '');
+
+            fetch(`/admin/memberships/getPlanPrice/${membershipPlanId}`)
+                .then(response => response.json())
+                .then(price => amountInput.value = parseFloat(price).toFixed(2))
+                .catch(() => amountInput.value = '0.00');
+        } else {
+            endDateInput.value = '';
+            amountInput.value = '';
+        }
+    }
+</script>
+
+</body>
+</html>

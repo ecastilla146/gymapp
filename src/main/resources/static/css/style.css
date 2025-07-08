@@ -1,0 +1,677 @@
+html {
+    scroll-behavior: smooth;
+}
+/* Estilos globales y reseteo */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Montserrat', sans-serif;
+    background: #000000; /* Esto será cubierto por el carrusel y el overlay */
+    color: #fff;
+    /* Ajusta el padding-top según la altura final de tu header para que el contenido no quede debajo del fijo */
+    padding-top: 90px; /* Ya estaba, déjalo si 90px es la altura de tu header en desktop */
+}
+
+/* --- ESTILOS DE LA BARRA DE NAVEGACIÓN (HEADER) --- */
+.main-header { /* Clase añadida al <header> en HTML */
+    background: #ffffff; /* Fondo oscuro para el header */
+    padding: 15px 40px; /* Padding para espacio interno */
+    display: flex;
+    justify-content: space-between; /* Espacio entre logo y nav/botón */
+    align-items: center; /* Centrar verticalmente */
+    position: fixed; /* Hace que el header se quede fijo en la ventana */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Sombra sutil */
+}
+
+.header-logo { /* Clase añadida a la imagen del logo en HTML */
+    height: 80px; /* Tamaño del logo en desktop */
+    transition: height 0.3s ease; /* Para animación en responsive */
+}
+
+/* Estilos de la navegación principal (enlaces) */
+.main-nav ul { /* Selector ajustado para el <ul> dentro de <nav class="main-nav"> */
+    list-style: none; /* Quita los puntos de la lista */
+    margin: 0;
+    padding: 0;
+    display: flex; /* Para que los enlaces estén en línea */
+    gap: 30px; /* Espacio entre los enlaces */
+}
+
+.main-nav ul li a { /* Selector ajustado para los <a> dentro del <li> */
+    color: #000000; /* Color del texto de los enlaces */
+    text-decoration: none; /* Quita el subrayado */
+    font-weight: bold; /* Usas bold en tu nav original, lo mantengo */
+    font-size: 1.1em; /* Ajusta el tamaño de fuente si es necesario */
+    padding: 10px 0; /* Padding para mayor área clicable */
+    transition: color 0.3s ease;
+}
+
+.main-nav ul li a:hover,
+.main-nav ul li a.active { /* Estilo para el enlace activo */
+    color: #00ccff; /* Color al pasar el ratón o si está activo */
+}
+
+/* Botón de hamburguesa (oculto en desktop) */
+.menu-toggle { /* Clase del botón añadido en HTML */
+    display: none; /* Oculto por defecto en pantallas grandes */
+    background: none;
+    border: none;
+    color: #000000;
+    font-size: 2em; /* Tamaño del icono */
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1001; /* Para que esté por encima del menú cuando se abre */
+}
+
+/* --- MEDIA QUERIES PARA RESPONSIVIDAD DE LA BARRA DE NAVEGACIÓN (MÓVIL) --- */
+@media (max-width: 768px) { /* breakpoint para móviles/tablets pequeñas */
+    .main-header {
+        padding: 15px 20px; /* Menos padding en pantallas pequeñas */
+        flex-wrap: wrap; /* Permite que los elementos salten de línea */
+        justify-content: space-between; /* Mantener logo y toggle separados */
+    }
+
+    .header-logo {
+        height: 60px; /* Logo más pequeño en móvil */
+    }
+
+    .menu-toggle {
+        display: block; /* Muestra el botón de hamburguesa en móvil */
+    }
+
+    .main-nav { /* La navegación completa */
+        /* Oculta la navegación por defecto en móvil */
+        display: none;
+        flex-direction: column; /* Apila los enlaces verticalmente */
+        width: 100%; /* Ocupa todo el ancho disponible */
+        background-color: #262626; /* Fondo para el menú desplegable */
+        position: absolute; /* Posición absoluta para cubrir el contenido */
+        top: 90px; /* Ajusta según la altura de tu header (80px logo + 15px padding superior - ajustado a 90px para margen) */
+        left: 0;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 10px; /* Espacio al final de la lista */
+    }
+
+    .main-nav.active { /* Esta clase se añade con JavaScript */
+        display: flex; /* Muestra la navegación cuando tiene la clase 'active' */
+    }
+
+    .main-nav ul { /* La lista de enlaces dentro del nav */
+        flex-direction: column; /* Apila los ítems de la lista */
+        width: 100%;
+        gap: 0; /* Elimina el espacio entre enlaces apilados */
+    }
+
+    .main-nav ul li {
+        width: 100%; /* Cada ítem ocupa todo el ancho */
+        text-align: center; /* Centra el texto */
+    }
+
+    .main-nav ul li a {
+        padding: 15px 20px; /* Más padding para los enlaces de menú móvil */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Separador entre enlaces */
+    }
+
+    .main-nav ul li:last-child a {
+        border-bottom: none; /* No hay borde en el último elemento */
+    }
+
+    body {
+        /* Si tu header cambia de altura en móvil, ajusta el padding-top aquí */
+        padding-top: 75px; /* Altura del header en móvil (60px logo + 15px padding) */
+    }
+}
+
+
+/* --- FIN ESTILOS DE BARRA DE NAVEGACIÓN --- */
+
+
+/* Estilos del carrusel (slider) */
+.slider {
+    position: relative;
+    height: 80vh; /* Ocupa el 80% del alto de la ventana */
+    overflow: hidden; /* Oculta las partes de las imágenes que están fuera de la vista */
+}
+
+.slides {
+    display: flex;
+    width: 300%; /* Si tienes 3 imágenes, es 300%; si tienes N imágenes, es N*100% */
+    animation: slide 15s infinite; /* Ajusta el tiempo total del ciclo del carrusel */
+}
+
+.slide {
+    width: 100vw; /* Cada slide ocupa el 100% del ancho de la ventana */
+    height: 80vh; /* Cada slide ocupa el 80% del alto de la ventana */
+    background-size: cover; /* Ajusta la imagen para cubrir todo el espacio */
+    background-position: center; /* Centra la imagen de fondo */
+    flex-shrink: 0; /* Evita que los slides se encojan */
+}
+
+/* Rutas de las imágenes del carrusel */
+/* ASEGÚRATE de que estas imágenes estén en src/main/resources/static/img/ */
+.slide1 { background-image: url('/img/carrusel1.jpg'); }
+.slide2 { background-image: url('/img/carrusel2.jpg'); }
+.slide3 { background-image: url('/img/carrusel3.jpg'); }
+/* Si tienes más slides, añade más aquí:
+.slide4 { background-image: url('/img/carrusel4.jpg'); }
+*/
+
+/* Animación del carrusel */
+@keyframes slide {
+    /* Para 3 slides, 15 segundos de duración */
+    0% { transform: translateX(0); } /* Muestra slide 1 */
+    33% { transform: translateX(0); } /* Permanece en slide 1 */
+    36% { transform: translateX(-100vw); } /* Transición a slide 2 */
+    66% { transform: translateX(-100vw); } /* Permanece en slide 2 */
+    69% { transform: translateX(-200vw); } /* Transición a slide 3 */
+    99% { transform: translateX(-200vw); } /* Permanece en slide 3 */
+    100% { transform: translateX(0); } /* Regresa a slide 1 */
+}
+
+/* Estilos del overlay (texto y botón sobre el carrusel) */
+.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 80vh; /* Mismo alto que el carrusel */
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo semi-transparente para que se vea el texto */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+}
+
+.overlay h1 {
+    font-size: 48px;
+    color: #00ccff; /* Color del logo SmartGym */
+}
+
+.overlay p {
+    font-size: 20px;
+    margin: 20px 0;
+}
+
+/* Estilos del botón */
+.btn {
+    background: #00ccff; /* Rojo */
+    color: white;
+    padding: 15px 30px;
+    font-weight: bold;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 18px;
+    transition: background 0.3s ease; /* Efecto de transición suave al pasar el ratón */
+}
+
+.btn:hover {
+    background: #017491; /* Rojo más oscuro al pasar el ratón */
+}
+/* ... (todo tu CSS existente para header, slider, overlay, etc.) ... */
+
+/* NUEVA SECCIÓN PARA LA FRASE "Encuentra la sede..." */
+.location-text-section {
+    background: #fff; /* Fondo blanco para esta sección */
+    padding: 40px 20px 20px 20px; /* Espaciado superior, lateral y menor inferior */
+    text-align: center; /* Centra el texto */
+    color: #000; /* Color de texto para esta sección (negro) */
+    margin-top: 0; /* Asegura que no haya margen superior indeseado */
+}
+
+/* El título que ahora está en una sección separada */
+.location-title {
+    font-size: 36px;
+    font-weight: bold;
+    margin-bottom: 0; /* Quitamos el margen inferior si no hay nada debajo */
+    color: #000; /* El título será negro para que contraste con el fondo blanco */
+}
+
+.location-title .highlight {
+    color: #00ccff; /* El color amarillo sigue destacando */
+}
+
+/* SECCIÓN DEL BANNER DE BÚSQUEDA (antes .find-location) */
+.search-banner-section {
+    background: #fff; /* Fondo blanco que se verá en los bordes */
+    padding: 20px; /* Espaciado lateral para que el banner no toque los bordes de la pantalla */
+    text-align: center; /* Centra el contenido */
+    margin-top: 0; /* Asegura que no haya margen superior indeseado */
+    padding-bottom: 50px; /* Espacio debajo del banner si lo deseas */
+}
+
+/* Contenedor del banner con la imagen de fondo (igual que antes) */
+.location-banner-wrapper {
+    background-image: url('/img/kronos_gym.jpg'); /* Asegúrate de que la ruta sea correcta */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: rgba(0, 0, 0, 0.4); /* Overlay oscuro semitransparente */
+    background-blend-mode: overlay; /* Mezcla el color con la imagen */
+
+    /* color: #fff; <--- Ya no es necesario aquí, el texto está fuera */
+
+    max-width: 1300px; /* Ancho máximo para el banner, ajústalo según necesites */
+    margin: 0 auto; /* Centra el banner horizontalmente */
+    padding: 120px 20px; /* Padding interno para el contenido (la barra de búsqueda) */
+    border-radius: 10px; /* Bordes redondeados para el banner */
+    overflow: hidden; /* Asegura que la imagen de fondo y el contenido respeten los bordes redondeados */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2); /* Sombra para dar efecto de flotante */
+}
+
+/* La barra de búsqueda (ajustes de color si es necesario) */
+.search-bar-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    background: #fff; /* Fondo blanco para la barra de búsqueda */
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input {
+    flex-grow: 1;
+    border: none;
+    padding: 15px 20px;
+    font-size: 18px;
+    outline: none;
+    color: #333; /* Asegura que el texto del input sea legible */
+}
+
+.search-input::placeholder {
+    color: #888;
+}
+
+.search-button {
+    background: #00ccff;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+.search-button:hover {
+    background: #017491;
+}
+
+.search-button svg {
+    color: #000; /* Color del icono de búsqueda (negro) */
+    width: 24px;
+    height: 24px;
+}
+
+/* Opcional: Media Queries para Responsividad */
+@media (max-width: 768px) {
+    .location-text-section {
+        padding: 30px 15px 15px 15px;
+    }
+    .location-title {
+        font-size: 30px;
+    }
+    .location-banner-wrapper {
+        max-width: 95%;
+        padding: 30px 15px;
+    }
+    .search-input {
+        font-size: 16px;
+        padding: 12px 15px;
+    }
+    .search-button {
+        padding: 12px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .location-title {
+        font-size: 24px;
+    }
+    .search-bar-container {
+        flex-direction: column;
+        max-width: 90%;
+        border-radius: 10px;
+    }
+    .search-input {
+        border-bottom: 1px solid #eee;
+        border-radius: 10px 10px 0 0;
+    }
+    .search-button {
+        width: 100%;
+        border-radius: 0 0 10px 10px;
+    }
+}
+/*SECCION PLANES*/
+/* ... (todo tu CSS existente) ... */
+
+/* Sección de Planes */
+.plans-section {
+    background: #f8f8f8; /* Un fondo muy claro para toda la sección de planes */
+    padding: 60px 20px; /* Espaciado superior e inferior para separar del banner */
+    text-align: center; /* Para centrar el contenedor de planes */
+}
+
+.plans-container {
+    display: flex; /* Muestra las tarjetas una al lado de la otra */
+    justify-content: center; /* Centra las tarjetas horizontalmente */
+    flex-wrap: wrap; /* Permite que las tarjetas se envuelvan a la siguiente línea en pantallas pequeñas */
+    gap: 30px; /* Espacio entre las tarjetas */
+    max-width: 1200px; /* Ancho máximo para el contenedor de las tarjetas */
+    margin: 0 auto; /* Centra el contenedor de las tarjetas */
+}
+
+.plan-card {
+    background: #333; /* Fondo gris oscuro para las tarjetas */
+    color: #fff; /* Texto blanco por defecto en las tarjetas */
+    border-radius: 10px;
+    /*overflow: hidden; /* Asegura que el contenido respete el border-radius */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    width: 100%; /* Por defecto, ocupa todo el ancho */
+    max-width: 350px; /* Ancho máximo para cada tarjeta */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Efecto al pasar el ratón */
+    display: flex; /* Para organizar header y details verticalmente */
+    flex-direction: column;
+}
+
+.plan-card:hover {
+    transform: translateY(-5px); /* Pequeño levantamiento al pasar el ratón */
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos específicos para el plan Premium (Elite) */
+.plan-card.premium {
+    background: #222; /* Un gris más oscuro para el plan Premium */
+    border: 2px solid #00ccff; /* Borde para destacarlo */
+}
+
+.plan-header {
+    padding: 25px;
+    background: #333; /* Fondo para el encabezado dentro de la tarjeta */
+    position: relative; /* Para posicionar la insignia */
+    padding-top: 40px; /* Espacio para la insignia */
+}
+
+.plan-card.premium .plan-header {
+    background: #00ccff; /* Color para el header del plan premium */
+    color: #000; /* Texto negro para el header del plan premium */
+}
+
+.badge {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%); /* Centra el badge fuera del card */
+    background: #00ccff; /* Color */
+    color: #000;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap; /* Evita que el texto del badge se rompa */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+}
+
+.plan-header h3 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.plan-header p.plan-subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.plan-details {
+    padding: 25px;
+    flex-grow: 1; /* Ocupa el espacio restante en la columna */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.plan-details h4 {
+    font-size: 18px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #00ccff; /* Azul para los títulos de precio/beneficios */
+}
+
+.plan-details p.price-old {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.plan-details p.fidelity {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-bottom: 20px;
+}
+
+.btn-plan {
+    background: #00ccff; /* Color para el botón */
+    color: #000;
+    padding: 12px 25px;
+    font-weight: bold;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 16px;
+    transition: background 0.3s ease;
+    margin-top: auto; /* Empuja el botón al final del div flex */
+    display: inline-block; /* Permite que el margen auto funcione */
+    width: fit-content; /* Se ajusta al contenido */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.btn-plan:hover {
+    background: #00ccff;
+}
+
+.benefits-list {
+    list-style: none; /* Quita los puntos de lista por defecto */
+    padding: 0;
+    margin-top: 15px;
+}
+
+.benefits-list li {
+    display: flex; /* Para alinear el icono y el texto */
+    align-items: flex-start; /* Alinea los ítems con el inicio del texto */
+    margin-bottom: 10px;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* Estilos para los iconos de ✅ y ❌ (usando Unicode) */
+.icon-check::before {
+    content: '✅'; /* El emoji de marca de verificación */
+    margin-right: 8px;
+    font-size: 1.2em; /* Haz el emoji un poco más grande */
+    line-height: 1; /* Ayuda a la alineación */
+}
+
+.icon-x::before {
+    content: '❌'; /* El emoji de cruz */
+    margin-right: 8px;
+    font-size: 1.2em;
+    line-height: 1;
+}
+
+/* Media Queries para Responsividad (Tarjetas) */
+@media (max-width: 1100px) {
+    .plans-container {
+        flex-direction: column; /* Apila las tarjetas en pantallas más pequeñas */
+        align-items: center; /* Centra las tarjetas apiladas */
+    }
+    .plan-card {
+        max-width: 400px; /* Un poco más de ancho para las tarjetas apiladas */
+    }
+}
+
+@media (max-width: 768px) {
+    .plans-section {
+        padding: 40px 15px;
+    }
+    .plan-header h3 {
+        font-size: 24px;
+    }
+    .plan-details p.price-old {
+        font-size: 18px;
+    }
+}
+
+/* Sección de la App */
+.app-section {
+    background: #87ddf2; /* Un color similar al beige/amarillo claro de la imagen */
+    padding: 80px 20px;
+    color: #000; /* Texto negro para esta sección */
+    text-align: left; /* Alineación por defecto del texto */
+}
+
+.app-content-wrapper {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+    justify-content: center; /* Centra el contenido */
+    align-items: center; /* Alinea verticalmente los ítems */
+    max-width: 1200px; /* Ancho máximo similar al del ejemplo */
+    margin: 0 auto; /* Centra el wrapper */
+    gap: 50px; /* Espacio entre el texto y las imágenes */
+}
+
+.app-text-content {
+    flex: 1; /* Ocupa el espacio disponible */
+    min-width: 300px; /* Ancho mínimo para el texto */
+    max-width: 500px; /* Ancho máximo para el texto */
+    text-align: left; /* Alineación del texto dentro de su contenedor */
+}
+
+.app-text-content h2 {
+    font-size: 38px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.app-text-content h2 .highlight {
+    color: #ffffff; /* Amarillo para la parte resaltada */
+}
+
+.app-text-content p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.app-download-qr {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Espacio entre QR y botones */
+    margin-top: 30px;
+}
+
+.qr-code {
+    width: 100px; /* Tamaño del QR */
+    height: 100px;
+    border: 1px solid #ddd; /* Borde sutil si es necesario */
+    border-radius: 5px;
+}
+
+.app-stores {
+    display: flex;
+    flex-direction: column; /* Apila los botones de las tiendas */
+    gap: 10px;
+}
+
+.app-stores a img {
+    width: 150px; /* Ancho de los botones de la tienda */
+    height: auto;
+    transition: transform 0.2s ease;
+}
+
+.app-stores a img:hover {
+    transform: scale(1.05); /* Efecto de crecimiento al pasar el ratón */
+}
+
+.app-image-content {
+    flex: 1; /* Ocupa el espacio disponible */
+    min-width: 300px; /* Ancho mínimo para las imágenes */
+    max-width: 500px; /* Ancho máximo para las imágenes */
+    display: flex;
+    justify-content: center; /* Centra las imágenes */
+    align-items: center; /* Alinea verticalmente las imágenes */
+}
+
+.app-mockup-img {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Elimina espacio extra debajo de la imagen */
+}
+
+/* Pie de Página Principal */
+.main-footer {
+    background: #ffffff; /* Fondo negro */
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.footer-logo {
+    height: 100px; /* Altura del logo en el footer */
+    width: auto;
+}
+
+/* Media Queries para Responsividad del Footer */
+@media (max-width: 900px) {
+    .app-content-wrapper {
+        flex-direction: column; /* Apila el contenido en pantallas medianas */
+        text-align: center; /* Centra el texto */
+    }
+
+    .app-text-content, .app-image-content {
+        max-width: 100%; /* Ocupa todo el ancho disponible */
+    }
+
+    .app-text-content {
+        order: 2; /* Cambia el orden para que el texto vaya después de la imagen (opcional) */
+    }
+
+    .app-image-content {
+        order: 1; /* La imagen va primero */
+    }
+
+    .app-download-qr {
+        justify-content: center; /* Centra el QR y los botones apilados */
+    }
+
+    .app-text-content h2 {
+        font-size: 32px;
+    }
+}
+
+@media (max-width: 600px) {
+    .app-section {
+        padding: 50px 15px;
+    }
+    .app-text-content h2 {
+        font-size: 28px;
+    }
+    .app-download-qr {
+        flex-direction: column; /* Apila el QR y los botones en pantallas muy pequeñas */
+        gap: 15px;
+    }
+}

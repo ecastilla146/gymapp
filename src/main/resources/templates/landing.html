@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KRONOS - Bienvenido</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="main-header"> <img th:src="@{/img/logo.png}" alt="Mi Logo" class="header-logo"> <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation">
+            <i class="fas fa-bars"></i> </button>
+
+        <nav class="main-nav" id="main-nav"> <ul> <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#sedes">Sedes</a></li>
+                <li><a href="#planes">Planes</a></li>
+                <li><a href="/login">Iniciar sesión</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="slider" id="inicio">
+        <div class="slides">
+            <div class="slide slide1"></div>
+            <div class="slide slide2"></div>
+            <div class="slide slide3"></div>
+        </div>
+        <div class="overlay">
+            <h1>¡ENTRENA SIN LÍMITES!</h1>
+            <p>Inscríbete hoy y obtén beneficios exclusivos</p>
+            <a href="/login" class="btn">¡QUIERO ENTRENAR YA!</a>
+        </div>
+    </section>
+    
+    <section class="location-text-section" id="sedes">
+        <h2 class="location-title">Encuentra la sede <span class="highlight">más cerca de ti</span></h2>
+    </section>
+
+    <section class="search-banner-section">
+        <div class="location-banner-wrapper">
+            <div class="search-bar-container">
+                <input type="text" placeholder="Buscar sede" class="search-input">
+                <button type="submit" class="search-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+    
+    <section class="plans-section" id="planes">
+        <div class="plans-container">
+
+            <div class="plan-card premium">
+                <div class="plan-header">
+                    <span class="badge">Más beneficios</span>
+                    <h3>🥇 Kronos Elite</h3>
+                    <p class="plan-subtitle">Entrena en todas las sedes KRONOS sin límites</p>
+                </div>
+                <div class="plan-details">
+                    <h4>💰 Precio:</h4>
+                    <p class="price-old">$54.950* mensual por 2 meses, después $109.900/mes</p>
+                    <p class="fidelity">12 meses de fidelidad</p>
+                    <a href="#" class="btn-plan">¡Inscríbete ya!</a>
+                    <h4>✅ Beneficios:</h4>
+                    <ul class="benefits-list">
+                        <li><span class="icon-check"></span> Acceso ilimitado a todas las sedes KRONOS en Latinoamérica</li>
+                        <li><span class="icon-check"></span> Puedes traer a un invitado 5 veces al mes</li>
+                        <li><span class="icon-check"></span> Kronos Spa (zona de relajación y sillones de masaje)</li>
+                        <li><span class="icon-check"></span> Descuentos exclusivos con marcas aliadas</li>
+                        <li><span class="icon-check"></span> Plan personalizado con la App Kronos Fit</li>
+                        <li><span class="icon-check"></span> Seguimiento de progreso con Kronos Vital</li>
+                        <li><span class="icon-check"></span> Entrenamientos virtuales con Kronos Go</li>
+                        <li><span class="icon-check"></span> Clases grupales dirigidas por instructores</li>
+                        <li><span class="icon-check"></span> Acceso completo a todas las áreas del gimnasio</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="plan-card intermediate">
+                <div class="plan-header">
+                    <h3>🥈 Kronos Power</h3>
+                    <p class="plan-subtitle">Entrena cuando quieras en tu sede preferida</p>
+                </div>
+                <div class="plan-details">
+                    <h4>💰 Precio:</h4>
+                    <p class="price-old">$34.950* mensual por 2 meses, después $69.900/mes</p>
+                    <p class="fidelity">12 meses de fidelidad</p>
+                    <a href="#" class="btn-plan">¡Inscríbete ya!</a>
+                    <h4>✅ Beneficios:</h4>
+                    <ul class="benefits-list">
+                        <li><span class="icon-x"></span> Acceso a todas las sedes KRONOS</li>
+                        <li><span class="icon-x"></span> Traer invitados gratis</li>
+                        <li><span class="icon-x"></span> Kronos Spa (zona de relajación)</li>
+                        <li><span class="icon-x"></span> Descuentos con marcas aliadas</li>
+                        <li><span class="icon-check"></span> Plan personalizado con la App Kronos Fit</li>
+                        <li><span class="icon-check"></span> Seguimiento de progreso con Kronos Vital</li>
+                        <li><span class="icon-check"></span> Entrenamientos virtuales con Kronos Go</li>
+                        <li><span class="icon-check"></span> Clases grupales dirigidas por instructores</li>
+                        <li><span class="icon-check"></span> Acceso a todas las áreas del gimnasio</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="plan-card basic">
+                <div class="plan-header">
+                    <h3>🥉 Kronos Alpha</h3>
+                    <p class="plan-subtitle">Ideal para comenzar tu transformación</p>
+                </div>
+                <div class="plan-details">
+                    <h4>💰 Precio:</h4>
+                    <p class="price-old">$44.950* mensual por 2 meses, después $89.900/mes</p>
+                    <p class="fidelity">Sin fidelidad</p>
+                    <a href="#" class="btn-plan">¡Inscríbete ya!</a>
+                    <h4>✅ Beneficios:</h4>
+                    <ul class="benefits-list">
+                        <li><span class="icon-x"></span> Acceso a todas las sedes KRONOS</li>
+                        <li><span class="icon-x"></span> Traer invitados gratis</li>
+                        <li><span class="icon-x"></span> Kronos Spa (zona de relajación)</li>
+                        <li><span class="icon-x"></span> Descuentos con marcas aliadas</li>
+                        <li><span class="icon-check"></span> Plan personalizado con la App Kronos Fit</li>
+                        <li><span class="icon-check"></span> Seguimiento de progreso con Kronos Vital</li>
+                        <li><span class="icon-check"></span> Entrenamientos virtuales con Kronos Go</li>
+                        <li><span class="icon-check"></span> Clases grupales dirigidas por instructores</li>
+                        <li><span class="icon-check"></span> Acceso a todas las áreas del gimnasio</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="app-section">
+        <div class="app-content-wrapper">
+            <div class="app-text-content">
+                <h2>Kronos Web: una experiencia de <span class="highlight">entrenamiento completa</span>, dentro y fuera del gimnasio</h2>
+                <p>No importa si ya tienes experiencia o si recién estás comenzando a practicar actividad física, una cosa es segura: al descargar gratis la aplicación Kronos Fit, obtienes el mejor aliado para tu rutina de entrenamiento. Exclusivo para usuarios.</p>
+                <p>Escanea el código para descargar gratis.</p>
+                <div class="app-download-qr">
+                    <img th:src="@{/img/qr-code.png}" alt="QR Code" class="qr-code">
+                    <div class="app-stores">
+                        <a href="#" target="_blank"><img th:src="@{/img/google-play.png}" alt="Descargar en Google Play"></a>
+                        <a href="#" target="_blank"><img th:src="@{/img/app-store.png}" alt="Descargar en App Store"></a>
+                    </div>
+                </div>
+            </div>
+            <div class="app-image-content">
+                <img th:src="@{/img/pantalla.png}" alt="Kronos Fit App Mockup" class="app-mockup-img">
+            </div>
+        </div>
+    </section>
+
+    <footer class="main-footer">
+        <img th:src="@{/img/logo.png}" alt="Kronos Fit Logo" class="footer-logo">
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Obtener todos los enlaces de la navegación
+            const navLinks = document.querySelectorAll('nav a');
+
+            // Obtener todas las secciones a las que apuntan los enlaces
+            // Filtramos el enlace de Iniciar sesión para que no sea una sección
+            const sections = Array.from(navLinks)
+                                .filter(link => link.getAttribute('href').startsWith('#'))
+                                .map(link => document.querySelector(link.getAttribute('href')));
+
+            // Función para actualizar la clase activa en el menú
+            function updateActiveClass() {
+                let currentActive = null;
+
+                // Iterar sobre las secciones para ver cuál está visible
+                sections.forEach(section => {
+                    if (section) { // Asegurarse de que la sección existe
+                        const sectionTop = section.offsetTop;
+                        const sectionHeight = section.clientHeight;
+                        const scrollPosition = window.scrollY; // Posición actual del scroll
+
+                        // Ajuste para cuándo consideramos que una sección está "activa"
+                        // Por ejemplo, cuando el 25% superior de la sección está visible
+                        if (scrollPosition >= sectionTop - window.innerHeight / 4 &&
+                            scrollPosition < sectionTop + sectionHeight - window.innerHeight / 4) {
+                            currentActive = section.id;
+                        }
+                    }
+                });
+
+                // Remover la clase 'active' de todos los enlaces
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                });
+
+                // Añadir la clase 'active' al enlace de la sección actual
+                if (currentActive) {
+                    const activeLink = document.querySelector(`nav a[href="#${currentActive}"]`);
+                    if (activeLink) {
+                        activeLink.classList.add('active');
+                    }
+                } else {
+                    // Si no hay ninguna sección activa (ej. al inicio de la página),
+                    // se puede activar el enlace de "Inicio" por defecto.
+                    const homeLink = document.querySelector('nav a[href="#inicio"]');
+                    if (homeLink) {
+                        homeLink.classList.add('active');
+                    }
+                }
+            }
+
+            // Ejecutar la función al cargar la página y en cada scroll
+            updateActiveClass(); // Para establecer el estado inicial
+            window.addEventListener('scroll', updateActiveClass);
+
+            // (Opcional) Si quieres que al hacer click se ponga activo inmediatamente
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    // Remover la clase 'active' de todos los enlaces
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    // Añadir la clase 'active' al enlace clickeado
+                    event.target.classList.add('active');
+                });
+            });
+
+            // --- Nuevo JavaScript para el menú hamburguesa ---
+            const menuToggle = document.getElementById('menu-toggle');
+            const mainNav = document.getElementById('main-nav');
+
+            menuToggle.addEventListener('click', function() {
+                mainNav.classList.toggle('active'); // Alterna la clase 'active'
+                this.querySelector('i').classList.toggle('fa-bars'); // Cambia icono de hamburguesa
+                this.querySelector('i').classList.toggle('fa-times'); // a icono de cerrar
+            });
+            // --- Fin del nuevo JavaScript ---
+
+        });
+    </script>
+</body>
+</html>

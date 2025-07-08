@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout-admin}">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalles de Membresía - Kronos Gym</title>
+</head>
+<body>
+
+<section th:fragment="content" class="dashboard-section">
+    <h3><i class="fas fa-info-circle"></i> Detalles de la Membresía</h3>
+
+    <div class="details-container">
+        <div class="detail-item">
+            <span class="detail-label">ID de Membresía:</span>
+            <span class="detail-value" th:text="${membership.id}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Usuario:</span>
+            <span class="detail-value" th:text="${membership.user.firstName + ' ' + membership.user.lastName + ' (' + membership.user.username + ')'}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Plan:</span>
+            <span class="detail-value" th:text="${membership.membershipPlan.name}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Descripción del Plan:</span>
+            <span class="detail-value" th:text="${membership.membershipPlan.description}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Duración del Plan:</span>
+            <span class="detail-value" th:text="${membership.membershipPlan.durationMonths + ' meses'}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Fecha de Inicio:</span>
+            <span class="detail-value" th:text="${#temporals.format(membership.startDate, 'dd-MM-yyyy')}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Fecha de Vencimiento:</span>
+            <span class="detail-value" th:text="${#temporals.format(membership.endDate, 'dd-MM-yyyy')}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Monto Pagado:</span>
+            <span class="detail-value" th:text="${#numbers.formatCurrency(membership.amount)}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Estado:</span>
+            <span class="detail-value">
+                <span class="membership-status-label" th:classappend="'status-' + ${membership.status}" th:text="${membership.status}"></span>
+            </span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Método de Pago:</span>
+            <span class="detail-value" th:text="${membership.paymentMethod}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Fecha de Creación:</span>
+            <span class="detail-value" th:text="${#temporals.format(membership.createdAt, 'dd-MM-yyyy HH:mm')}"></span>
+        </div>
+        <div class="detail-item">
+            <span class="detail-label">Última Actualización:</span>
+            <span class="detail-value" th:text="${#temporals.format(membership.updatedAt, 'dd-MM-yyyy HH:mm')}"></span>
+        </div>
+    </div>
+
+    <div class="details-actions">
+        <a th:href="@{/admin/memberships}" class="btn-back">
+            <i class="fas fa-arrow-alt-circle-left"></i> Volver a la Lista
+        </a>
+    </div>
+</section>
+
+</body>
+</html>

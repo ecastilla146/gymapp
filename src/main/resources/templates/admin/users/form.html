@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isEdit ? 'Editar Usuario' : 'Crear Nuevo Usuario'} + ' - Kronos Gym'"></title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <style>
+        .user-form-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+            max-width: 700px; /* Limita el ancho del formulario */
+            margin: 30px auto; /* Centra el formulario */
+        }
+        .user-form-container h3 {
+            margin-bottom: 25px;
+            color: var(--text-color);
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Asegura que el padding no aumente el ancho */
+        }
+        .form-group input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .form-group .checkbox-label {
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .form-group .roles-checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .form-group .roles-checkbox-group label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none; /* Para los botones que son enlaces */
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #000000;
+        }
+        .btn-primary:hover {
+            background-color: #013a77;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: #040404;
+        }
+        .btn-secondary:hover {
+            background-color: #900202;
+        }
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 5px;
+            display: block;
+        }
+        .form-group input.is-invalid {
+            border-color: var(--danger-color);
+        }
+        .flash-message {
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img th:src="@{/img/logo.png}" alt="Kronos Logo" class="sidebar-logo">
+                <h3 class="app-title">Admin</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item">
+                        <a href="/admin/dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt icon"></i>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active">
+                        <a href="/admin/users" class="nav-link">
+                            <i class="fas fa-users icon"></i>
+                            <span class="text">Gestión de Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/memberships" class="nav-link">
+                            <i class="fas fa-credit-card icon"></i>
+                            <span class="text">Gestión de Membresías</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/attendance" class="nav-link">
+                            <i class="fas fa-clipboard-check icon"></i>
+                            <span class="text">Control de Asistencia</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/classes" class="nav-link">
+                            <i class="fas fa-dumbbell icon"></i>
+                            <span class="text">Clases y Actividades</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/staff" class="nav-link">
+                            <i class="fas fa-user-tie icon"></i>
+                            <span class="text">Entrenadores y Personal</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/inventory" class="nav-link">
+                            <i class="fas fa-boxes icon"></i>
+                            <span class="text">Control de Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/finance" class="nav-link">
+                            <i class="fas fa-chart-line icon"></i>
+                            <span class="text">Gestión Financiera</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/communication" class="nav-link">
+                            <i class="fas fa-bell icon"></i>
+                            <span class="text">Soporte y Comunicación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item logout">
+                        <a th:href="@{/logout}" class="nav-link">
+                            <i class="fas fa-sign-out-alt icon"></i>
+                            <span class="text">Cerrar Sesión</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <header class="navbar">
+                <div class="navbar-left">
+                    <h2 th:text="${isEdit ? 'Editar Usuario' : 'Crear Nuevo Usuario'}"></h2>
+                </div>
+                <div class="navbar-right">
+                    <span class="user-info" sec:authorize="isAuthenticated()">
+                        <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+                    </span>
+                </div>
+            </header>
+
+            <main class="dashboard-main-area">
+                <section class="user-form-container">
+                    <h3 th:text="${isEdit ? 'Formulario de Edición de Usuario' : 'Formulario de Creación de Usuario'}"></h3>
+
+                    <div th:if="${errorMessage}" class="flash-message error">
+                        <i class="fas fa-times-circle"></i> <span th:text="${errorMessage}"></span>
+                    </div>
+
+                    <form th:action="${isEdit ? '/admin/users/edit/' + userDto.id : '/admin/users/new'}"
+                          th:object="${userDto}"
+                          method="post">
+
+                        <input type="hidden" th:field="*{id}" th:if="${isEdit}" />
+
+                        <div class="form-group">
+                            <label for="firstName">Nombre:</label>
+                            <input type="text" id="firstName" th:field="*{firstName}"
+                                   th:classappend="${#fields.hasErrors('firstName') ? 'is-invalid' : ''}" required>
+                            <span th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" class="error-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Apellido:</label>
+                            <input type="text" id="lastName" th:field="*{lastName}"
+                                   th:classappend="${#fields.hasErrors('lastName') ? 'is-invalid' : ''}" required>
+                            <span th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" class="error-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="username">Nombre de Usuario:</label>
+                            <input type="text" id="username" th:field="*{username}"
+                                   th:classappend="${#fields.hasErrors('username') ? 'is-invalid' : ''}" required>
+                            <span th:if="${#fields.hasErrors('username')}" th:errors="*{username}" class="error-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" th:field="*{email}"
+                                   th:classappend="${#fields.hasErrors('email') ? 'is-invalid' : ''}" required>
+                            <span th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error-message"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password" th:text="${isEdit ? 'Nueva Contraseña (dejar en blanco para no cambiar):' : 'Contraseña:'}"></label>
+                            <input type="password" id="password" th:field="*{password}"
+                                   th:classappend="${#fields.hasErrors('password') ? 'is-invalid' : ''}"
+                                   th:required="${!isEdit}"> <span th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error-message"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword" th:text="${isEdit ? 'Confirmar Nueva Contraseña:' : 'Confirmar Contraseña:'}"></label>
+                            <input type="password" id="confirmPassword" th:field="*{confirmPassword}"
+                                   th:classappend="${#fields.hasErrors('confirmPassword') ? 'is-invalid' : ''}"
+                                   th:required="${!isEdit}"> <span th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="error-message"></span>
+                             <span th:if="${#fields.hasGlobalErrors()}" class="error-message" th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Roles:</label>
+                            <div class="roles-checkbox-group">
+                                <div th:each="role : ${allRoles}">
+                                    <input type="checkbox" th:id="${'role_' + role.id}" th:name="selectedRoles"
+                                           th:value="${role.name}"
+                                           th:checked="${userDto.selectedRoles != null and userDto.selectedRoles.contains(role.name)}">
+                                    <label th:for="${'role_' + role.id}" th:text="${role.name}"></label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <input type="checkbox" id="enabled" th:field="*{enabled}" />
+                            <label for="enabled" class="checkbox-label">Cuenta Habilitada</label>
+                        </div>
+
+                        <div class="form-actions">
+                            <a th:href="@{/admin/users}" class="btn btn-secondary">
+                                <i class="fas fa-times-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> <span th:text="${isEdit ? 'Actualizar Usuario' : 'Crear Usuario'}"></span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Kronos Gym</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <style>
+        /* Estilos de tabla y mensajes (mantener los anteriores) */
+        .users-table-container {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-light);
+        }
+        .users-table-container h3 {
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+        .table-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap; /* Para que se adapte en pantallas pequeñas */
+            gap: 15px; /* Espacio entre elementos */
+        }
+        .table-actions .btn {
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .btn-add-user {
+            background-color: var(--primary-color);
+            color: #000000;
+        }
+        .btn-add-user:hover {
+            background-color: #026f8a;
+        }
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .user-table th, .user-table td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+            word-wrap: break-word; /* Rompe palabras largas */
+        }
+        .user-table th {
+            background-color: var(--bg-light);
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        .user-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .user-table tr:hover {
+            background-color: #e9ecef;
+        }
+        .user-table .action-buttons a {
+            margin-right: 8px;
+            color: var(--primary-color);
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+        .user-table .action-buttons a:hover {
+            opacity: 0.8;
+        }
+        .user-table .action-buttons .btn-delete {
+            color: var(--danger-color);
+        }
+        .user-table .action-buttons .btn-toggle-status {
+            color: var(--accent-color);
+        }
+        .user-status.enabled {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+        .user-status.disabled {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+        .flash-message {
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Estilos de búsqueda y paginación */
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-bar input[type="text"] {
+            flex-grow: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .search-bar button {
+            background-color: var(--primary-color);
+            color: #000000;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-bar button:hover {
+            background-color: #026f8a;
+        }
+
+        .pagination-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            gap: 10px;
+        }
+        .pagination-controls a,
+        .pagination-controls span {
+            display: inline-block;
+            padding: 8px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            text-decoration: none;
+            color: var(--primary-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .pagination-controls a:hover {
+            background-color: var(--primary-color);
+            color: #000000;
+        }
+        .pagination-controls span.current-page {
+            background-color: var(--primary-color);
+            color: #4a4a4a;
+            border-color: var(--primary-color);
+            font-weight: 600;
+        }
+        .pagination-controls span.disabled {
+            color: var(--secondary-color);
+            cursor: not-allowed;
+            background-color: #d0d0d0;
+            border-color: #e0e0e0;
+        }
+        .pagination-info {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+        }
+        .sort-header {
+            cursor: pointer;
+            user-select: none; /* Evita que el texto se seleccione al hacer doble clic */
+        }
+        .sort-header i {
+            margin-left: 5px;
+            font-size: 0.8em;
+            color: var(--secondary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .table-actions {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .search-bar {
+                width: 100%;
+            }
+            .user-table th, .user-table td {
+                padding: 8px 10px; /* Reduce padding for smaller screens */
+                font-size: 0.9em;
+            }
+            .user-table .action-buttons a {
+                font-size: 1em;
+                margin-right: 5px;
+            }
+            .pagination-controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            .pagination-controls a,
+            .pagination-controls span {
+                padding: 6px 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img th:src="@{/img/logo-white.png}" alt="Kronos Logo" class="sidebar-logo">
+                <h3 class="app-title">Admin</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item">
+                        <a href="/admin/dashboard" class="nav-link">
+                            <i class="fas fa-tachometer-alt icon"></i>
+                            <span class="text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item active"> <a href="/admin/users" class="nav-link">
+                            <i class="fas fa-users icon"></i>
+                            <span class="text">Gestión de Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/memberships" class="nav-link">
+                            <i class="fas fa-credit-card icon"></i>
+                            <span class="text">Gestión de Membresías</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/attendance" class="nav-link">
+                            <i class="fas fa-clipboard-check icon"></i>
+                            <span class="text">Control de Asistencia</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/classes" class="nav-link">
+                            <i class="fas fa-dumbbell icon"></i>
+                            <span class="text">Clases y Actividades</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/staff" class="nav-link">
+                            <i class="fas fa-user-tie icon"></i>
+                            <span class="text">Entrenadores y Personal</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/inventory" class="nav-link">
+                            <i class="fas fa-boxes icon"></i>
+                            <span class="text">Control de Inventario</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/finance" class="nav-link">
+                            <i class="fas fa-chart-line icon"></i>
+                            <span class="text">Gestión Financiera</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/admin/communication" class="nav-link">
+                            <i class="fas fa-bell icon"></i>
+                            <span class="text">Soporte y Comunicación</span>
+                        </a>
+                    </li>
+                    <li class="nav-item logout">
+                        <a th:href="@{/logout}" class="nav-link">
+                            <i class="fas fa-sign-out-alt icon"></i>
+                            <span class="text">Cerrar Sesión</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <header class="navbar">
+                <div class="navbar-left">
+                    <h2>Gestión de Usuarios</h2>
+                </div>
+                <div class="navbar-right">
+                    <span class="user-info" sec:authorize="isAuthenticated()">
+                        <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+                    </span>
+                </div>
+            </header>
+
+            <main class="dashboard-main-area">
+                <section class="users-table-container">
+                    <h3>Listado de Usuarios</h3>
+
+                    <div th:if="${successMessage}" class="flash-message success">
+                        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+                    </div>
+                    <div th:if="${errorMessage}" class="flash-message error">
+                        <i class="fas fa-times-circle"></i> <span th:text="${errorMessage}"></span>
+                    </div>
+
+                    <div class="table-actions">
+                        <div class="search-bar">
+                            <form th:action="@{/admin/users}" method="get" class="search-form">
+                                <input type="text" name="keyword" th:value="${keyword}" placeholder="Buscar por nombre, email, usuario...">
+                                <input type="hidden" name="page" th:value="${currentPage}">
+                                <input type="hidden" name="size" th:value="${pageSize}">
+                                <input type="hidden" name="sort" th:value="${sortField} + ',' + ${sortDirection}">
+                                <button type="submit"><i class="fas fa-search"></i> Buscar</button>
+                            </form>
+                        </div>
+                        <a th:href="@{/admin/users/new}" class="btn btn-add-user">
+                            <i class="fas fa-plus"></i> Añadir Nuevo Usuario
+                        </a>
+                    </div>
+
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th class="sort-header" th:attr="onclick=|window.location.href='@{/admin/users(page=${currentPage},size=${pageSize},keyword=${keyword},sort='id,' + (${sortField == 'id' and sortDirection == 'asc' ? 'desc' : 'asc'}))}'|">
+                                    ID
+                                    <i th:classappend="${sortField == 'id' ? (sortDirection == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+                                </th>
+                                <th class="sort-header" th:attr="onclick=|window.location.href='@{/admin/users(page=${currentPage},size=${pageSize},keyword=${keyword},sort='firstName,' + (${sortField == 'firstName' and sortDirection == 'asc' ? 'desc' : 'asc'}))}'|">
+                                    Nombre Completo
+                                    <i th:classappend="${sortField == 'firstName' ? (sortDirection == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+                                </th>
+                                <th class="sort-header" th:attr="onclick=|window.location.href='@{/admin/users(page=${currentPage},size=${pageSize},keyword=${keyword},sort='username,' + (${sortField == 'username' and sortDirection == 'asc' ? 'desc' : 'asc'}))}'|">
+                                    Usuario
+                                    <i th:classappend="${sortField == 'username' ? (sortDirection == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+                                </th>
+                                <th class="sort-header" th:attr="onclick=|window.location.href='@{/admin/users(page=${currentPage},size=${pageSize},keyword=${keyword},sort='email,' + (${sortField == 'email' and sortDirection == 'asc' ? 'desc' : 'asc'}))}'|">
+                                    Email
+                                    <i th:classappend="${sortField == 'email' ? (sortDirection == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+                                </th>
+                                <th>Roles</th>
+                                <th class="sort-header" th:attr="onclick=|window.location.href='@{/admin/users(page=${currentPage},size=${pageSize},keyword=${keyword},sort='enabled,' + (${sortField == 'enabled' and sortDirection == 'asc' ? 'desc' : 'asc'}))}'|">
+                                    Estado
+                                    <i th:classappend="${sortField == 'enabled' ? (sortDirection == 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down') : 'fas fa-sort'}"></i>
+                                </th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="user : ${users}">
+                                <td th:text="${user.id}">1</td>
+                                <td th:text="${user.firstName} + ' ' + ${user.lastName}">Juan Pérez</td>
+                                <td th:text="${user.username}">jperez</td>
+                                <td th:text="${user.email}">juan.perez@example.com</td>
+                                <td>
+                                    <span th:each="role, iterStat : ${user.roles}">
+                                        <span th:text="${role.name.replace('ROLE_', '')}">CLIENT</span>
+                                        <span th:if="${!iterStat.last}">, </span>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:classappend="${user.enabled ? 'user-status enabled' : 'user-status disabled'}"
+                                          th:text="${user.enabled ? 'Activo' : 'Inactivo'}">Activo</span>
+                                </td>
+                                <td class="action-buttons">
+                                    <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" title="Editar Usuario">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a th:href="@{/admin/users/toggle-status/{id}(id=${user.id})}"
+                                       th:title="${user.enabled ? 'Desactivar Usuario' : 'Activar Usuario'}"
+                                       th:classappend="${user.enabled ? 'btn-toggle-status' : 'btn-toggle-status-disabled'}">
+                                        <i th:classappend="${user.enabled ? 'fas fa-toggle-on' : 'fas fa-toggle-off'}"></i>
+                                    </a>
+                                    <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" class="btn-delete"
+                                       onclick="return confirm('¿Estás seguro de que quieres eliminar este usuario? Esta acción es irreversible.');"
+                                       title="Eliminar Usuario">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr th:if="${users.empty}">
+                                <td colspan="7" style="text-align: center;">No se encontraron usuarios.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div th:if="${totalPages > 0}" class="pagination-controls">
+                        <span class="pagination-info">Mostrando [[${totalItems}]] usuarios | Página [[${currentPage}]] de [[${totalPages}]]</span>
+
+                        <a th:if="${currentPage > 1}"
+                           th:href="@{/admin/users(page=${currentPage - 1}, size=${pageSize}, keyword=${keyword}, sort=${sortField} + ',' + ${sortDirection})}">
+                           <i class="fas fa-angle-left"></i> Anterior
+                        </a>
+                        <span th:unless="${currentPage > 1}" class="disabled"><i class="fas fa-angle-left"></i> Anterior</span>
+
+                        <th:block th:each="i : ${#numbers.sequence(1, totalPages)}">
+                            <a th:if="${currentPage != i}"
+                               th:href="@{/admin/users(page=${i}, size=${pageSize}, keyword=${keyword}, sort=${sortField} + ',' + ${sortDirection})}"
+                               th:text="${i}">1</a>
+                            <span th:if="${currentPage == i}" class="current-page" th:text="${i}">1</span>
+                        </th:block>
+
+                        <a th:if="${currentPage < totalPages}"
+                           th:href="@{/admin/users(page=${currentPage + 1}, size=${pageSize}, keyword=${keyword}, sort=${sortField} + ',' + ${sortDirection})}">
+                           Siguiente <i class="fas fa-angle-right"></i>
+                        </a>
+                        <span th:unless="${currentPage < totalPages}" class="disabled">Siguiente <i class="fas fa-angle-right"></i></span>
+                    </div>
+
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${pageTitle}">Kronos Gym</title>
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <link rel="stylesheet" th:href="@{/css/memberships.css}">
+</head>
+<body>
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img th:src="@{/img/logo-white.png}" alt="Kronos Logo" class="sidebar-logo">
+            <h3 class="app-title">Admin</h3>
+            <button class="toggle-sidebar-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li><a href="/admin/dashboard"><i class="fas fa-tachometer-alt icon"></i><span>Dashboard</span></a></li>
+                <li><a href="/admin/memberships"><i class="fas fa-credit-card icon"></i><span>Gestión de Membresías</span></a></li>
+                <!-- Agrega aquí los demás enlaces -->
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="main-content" id="mainContent">
+        <header class="navbar">
+            <h2 th:text="${navbarTitle}">Panel de Control</h2>
+            <div sec:authorize="isAuthenticated()">
+                <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+            </div>
+        </header>
+
+        <main th:replace="${contentFragment} :: content"></main>
+    </div>
+</div>
+</body>
+</html>

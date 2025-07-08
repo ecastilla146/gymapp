@@ -1,0 +1,49 @@
+<!-- dashboard-default.html -->
+<div th:fragment="dashboardDefaultContent">
+    <section id="main-dashboard" class="dashboard-section active">
+        <h3>Resumen General</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <i class="fas fa-users-line stat-icon"></i>
+                <span class="stat-value">520</span>
+                <span class="stat-label">Socios Activos</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-dollar-sign stat-icon"></i>
+                <span class="stat-value">$15,000</span>
+                <span class="stat-label">Ingresos Mensuales</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-person-walking stat-icon"></i>
+                <span class="stat-value">120 / Día</span>
+                <span class="stat-label">Asistencias Promedio</span>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-calendar-check stat-icon"></i>
+                <span class="stat-value">Yoga</span>
+                <span class="stat-label">Clase Más Popular</span>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-card">
+                <h4>Ganancias Mensuales</h4>
+                <canvas id="monthlyEarningsChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h4>Asistencias Diarias</h4>
+                <canvas id="dailyAttendanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="recent-activity">
+            <h4>Actividad Reciente</h4>
+            <ul>
+                <li><i class="fas fa-user-plus"></i> Nuevo cliente registrado: Juan Pérez.</li>
+                <li><i class="fas fa-credit-card"></i> Pago de membresía recibido: María García (Anual).</li>
+                <li><i class="fas fa-dumbbell"></i> Clase de Crossfit programada para el 15/06.</li>
+                <li><i class="fas fa-box"></i> Stock bajo de proteína Whey.</li>
+            </ul>
+        </div>
+    </section>
+</div>

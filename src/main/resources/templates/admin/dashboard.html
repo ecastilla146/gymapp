@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${#strings.defaultString(pageTitle, 'Kronos Gym - Panel de Administrador')}">Kronos Gym - Panel de Administrador</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <th:block th:if="${pageCss}">
+        <link rel="stylesheet" th:href="${pageCss}">
+    </th:block>
+
+    <style>
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert i {
+            font-size: 1.2em;
+        }
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            /* Agrega un borde claro para diferenciar */
+            border: 1px solid #f5c6cb;
+        }
+        /* Estilo para el mensaje de diagnóstico */
+        .diagnostic-message {
+            background-color: yellow;
+            padding: 10px;
+            border: 1px solid orange;
+            color: black;
+            margin-bottom: 20px; /* Para separarlo del contenido principal */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img th:src="@{/img/logo-white.png}" alt="Kronos Logo" class="sidebar-logo">
+            <h3 class="app-title">Admin</h3> <button class="toggle-sidebar-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/dashboard') ? 'active' : ''}">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt icon"></i>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/users') ? 'active' : ''}">
+                    <a href="/admin/users" class="nav-link">
+                        <i class="fas fa-users icon"></i>
+                        <span class="text">Gestión de Usuarios</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/memberships') ? 'active' : ''}">
+                    <a href="/admin/memberships" class="nav-link">
+                        <i class="fas fa-credit-card icon"></i>
+                        <span class="text">Gestión de Membresías</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/attendance') ? 'active' : ''}">
+                    <a href="/admin/attendance" class="nav-link">
+                        <i class="fas fa-clipboard-check icon"></i>
+                        <span class="text">Control de Asistencia</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/classes') ? 'active' : ''}">
+                    <a href="/admin/classes" class="nav-link">
+                        <i class="fas fa-dumbbell icon"></i>
+                        <span class="text">Clases y Actividades</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/staff') ? 'active' : ''}">
+                    <a href="/admin/staff" class="nav-link">
+                        <i class="fas fa-user-tie icon"></i>
+                        <span class="text">Entrenadores y Personal</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/inventory') ? 'active' : ''}">
+                    <a href="/admin/inventory" class="nav-link">
+                        <i class="fas fa-boxes icon"></i>
+                        <span class="text">Control de Inventario</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/finance') ? 'active' : ''}">
+                    <a href="/admin/finance" class="nav-link">
+                        <i class="fas fa-chart-line icon"></i>
+                        <span class="text">Gestión Financiera</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/communication') ? 'active' : ''}">
+                    <a href="/admin/communication" class="nav-link">
+                        <i class="fas fa-bell icon"></i>
+                        <span class="text">Soporte y Comunicación</span>
+                    </a>
+                </li>
+                <li class="nav-item logout">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt icon"></i>
+                        <span class="text">Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <div class="main-content" id="mainContent">
+        <header class="navbar">
+            <div class="navbar-left">
+                <h2 th:text="${#strings.defaultString(navbarTitle, 'Panel de Control del Administrador')}">Panel de Control del Administrador</h2>
+            </div>
+            <div class="navbar-right">
+                <span class="user-info" sec:authorize="isAuthenticated()">
+                    <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+                </span>
+            </div>
+        </header>
+
+        
+
+            <div th:fragment="dashboardDefaultContent">
+                <section id="main-dashboard" class="dashboard-section active">
+                    <h3>Resumen General</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <i class="fas fa-users-line stat-icon"></i>
+                            <span class="stat-value">520</span>
+                            <span class="stat-label">Socios Activos</span>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-dollar-sign stat-icon"></i>
+                            <span class="stat-value">$15,000</span>
+                            <span class="stat-label">Ingresos Mensuales</span>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-person-walking stat-icon"></i>
+                            <span class="stat-value">120 / Día</span>
+                            <span class="stat-label">Asistencias Promedio</span>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-calendar-check stat-icon"></i>
+                            <span class="stat-value">Yoga</span>
+                            <span class="stat-label">Clase Más Popular</span>
+                        </div>
+                    </div>
+
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <h4>Ganancias Mensuales</h4>
+                            <canvas id="monthlyEarningsChart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h4>Asistencias Diarias</h4>
+                            <canvas id="dailyAttendanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h4>Actividad Reciente</h4>
+                        <ul>
+                            <li><i class="fas fa-user-plus"></i> Nuevo cliente registrado: Juan Pérez.</li>
+                            <li><i class="fas fa-credit-card"></i> Pago de membresía recibido: María García (Anual).</li>
+                            <li><i class="fas fa-dumbbell"></i> Clase de Crossfit programada para el 15/06.</li>
+                            <li><i class="fas fa-box"></i> Stock bajo de proteína Whey.</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script th:src="@{/js/admin-dashboard.js}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const mainContent = document.getElementById('mainContent');
+
+        if (sidebarToggle && sidebar && mainContent) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                mainContent.classList.toggle('shifted');
+            });
+        }
+
+        const monthlyEarningsCtx = document.getElementById('monthlyEarningsChart');
+        if (monthlyEarningsCtx) {
+            new Chart(monthlyEarningsCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [{
+                        label: 'Ganancias',
+                        data: [12000, 14000, 13500, 16000, 15000, 17000],
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        const dailyAttendanceCtx = document.getElementById('dailyAttendanceChart');
+        if (dailyAttendanceCtx) {
+            new Chart(dailyAttendanceCtx.getContext('2d'), {
+                type: 'line',
+
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Asistencia',
+                        data: [100, 110, 95, 130, 120, 80, 50],
+                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                        borderColor: 'rgba(153, 102, 255, 1)',
+                        borderWidth: 1,
+                        fill: false
+
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+<th:block th:if="${pageScript}">
+    <script th:src="${pageScript}"></script>
+</th:block>
+</body>
+</html>
