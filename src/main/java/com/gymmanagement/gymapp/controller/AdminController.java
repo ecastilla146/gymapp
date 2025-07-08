@@ -23,5 +23,33 @@ public class AdminController {
         return "admin/dashboard";
     }
 
-    // Aquí tus otros métodos para users, inventory, etc.
+    @GetMapping("/attendance")
+    public String redirectToAttendance() {
+        return "redirect:/admin/attendance";
+    }
+
+    @GetMapping("/classes")
+    public String redirectToClasses() {
+        return "redirect:/admin/classes";
+    }
+
+    @GetMapping("/staff")
+    public String redirectToStaff() {
+        return "redirect:/admin/staff";
+    }
+
+    @GetMapping("/inventory")
+    public String redirectToInventory() {
+        return "redirect:/admin/inventory";
+    }
+
+    @GetMapping("/finance")
+    public String redirectToFinance() {
+        return "redirect:/admin/finance";
+    }
+
+    @GetMapping("/communication")
+    public String redirectToCommunication() {
+        return "redirect:/admin/communication";
+    }
 }

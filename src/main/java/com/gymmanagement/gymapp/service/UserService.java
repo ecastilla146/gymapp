@@ -156,6 +156,15 @@ public class UserService implements UserDetailsService {
     }
 
     /**
+     * Obtiene todos los usuarios activos ordenados por nombre.
+     * 
+     * @return Lista de usuarios activos
+     */
+    public List<User> findAllActiveUsers() {
+        return userRepository.findByEnabledTrueOrderByFirstNameAsc();
+    }
+
+    /**
      * Busca usuarios por palabra clave con paginación.
      * 
      * @param keyword Término de búsqueda

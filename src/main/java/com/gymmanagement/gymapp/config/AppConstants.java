@@ -19,6 +19,17 @@ public final class AppConstants {
         public static final String ADMIN_USERS_LIST = "admin/users/list";
         public static final String ADMIN_USERS_FORM = "admin/users/form";
         public static final String ADMIN_DASHBOARD = "admin/dashboard";
+        public static final String ADMIN_ATTENDANCE_LIST = "admin/attendance/list";
+        public static final String ADMIN_CLASSES_LIST = "admin/classes/list";
+        public static final String ADMIN_CLASSES_FORM = "admin/classes/form";
+        public static final String ADMIN_STAFF_LIST = "admin/staff/list";
+        public static final String ADMIN_INVENTORY_LIST = "admin/inventory/list";
+        public static final String ADMIN_INVENTORY_FORM = "admin/inventory/form";
+        public static final String ADMIN_FINANCE_LIST = "admin/finance/list";
+        public static final String ADMIN_FINANCE_FORM = "admin/finance/form";
+        public static final String ADMIN_FINANCE_DASHBOARD = "admin/finance/dashboard";
+        public static final String ADMIN_SUPPORT_LIST = "admin/support/list";
+        public static final String ADMIN_SUPPORT_FORM = "admin/support/form";
         public static final String LOGIN = "login";
         public static final String LANDING = "landing";
         public static final String ERROR = "error/error";
@@ -30,6 +41,12 @@ public final class AppConstants {
     public static final class Redirects {
         public static final String ADMIN_USERS = "redirect:/admin/users";
         public static final String ADMIN_DASHBOARD = "redirect:/admin/dashboard";
+        public static final String ADMIN_ATTENDANCE = "redirect:/admin/attendance";
+        public static final String ADMIN_CLASSES = "redirect:/admin/classes";
+        public static final String ADMIN_STAFF = "redirect:/admin/staff";
+        public static final String ADMIN_INVENTORY = "redirect:/admin/inventory";
+        public static final String ADMIN_FINANCE = "redirect:/admin/finance";
+        public static final String ADMIN_SUPPORT = "redirect:/admin/communication";
         public static final String LOGIN = "redirect:/login";
         public static final String HOME = "redirect:/";
         

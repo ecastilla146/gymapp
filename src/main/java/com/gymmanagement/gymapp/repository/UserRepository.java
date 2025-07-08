@@ -1,6 +1,7 @@
 // src/main/java/com/gymmanagement/gymapp/repository/UserRepository.java
 package com.gymmanagement.gymapp.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -26,4 +27,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Método para encontrar un usuario por email o username (para validación de unicidad)
     Optional<User> findByEmailOrUsername(String email, String username);
+
+    // Método para obtener usuarios activos ordenados por nombre
+    List<User> findByEnabledTrueOrderByFirstNameAsc();
 }
