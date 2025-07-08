@@ -177,6 +177,19 @@ public class UserService implements UserDetailsService {
     }
 
     /**
+     * Busca usuarios por email (para autocompletado)
+     */
+    public List<User> searchUsersByEmail(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return userRepository.findByEmailContainingIgnoreCase(query.trim())
+                .stream()
+                .limit(10) // Limitar a 10 resultados
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Elimina un usuario por su ID.
      * 
      * @param id ID del usuario a eliminar

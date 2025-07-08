@@ -1,132 +1,739 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{admin/layout-admin}">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout-admin :: layout(~{::title}, ~{::content})}">
 <head>
-    <meta charset="UTF-8">
-    <title th:text="${membership.id == null ? 'Registrar Membresía' : 'Editar Membresía'} + ' - Kronos Gym'"></title>
+    <title>Nueva Membresía - KRONOS</title>
 </head>
 <body>
-
-<section th:fragment="content" class="dashboard-section">
-    <h3 th:text="${membership.id == null ? 'Registrar Nueva Membresía' : 'Editar Membresía'}"></h3>
-
-    <div th:if="${errorMessage}" class="alert error">
-        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
-    </div>
-
-    <div class="form-container">
-        <form th:action="@{/admin/memberships/save}" th:object="${membership}" method="post">
-            <input type="hidden" th:field="*{id}" />
-
-            <div class="form-group">
-                <label for="userId">Cliente:</label>
-                <select id="userId" th:field="*{userId}" required>
-                    <option value="">-- Seleccione un cliente --</option>
-                    <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.firstName + ' ' + user.lastName + ' (' + user.username + ')'}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}" class="error-message"></span>
+    <div th:fragment="content">
+        <div class="form-header">
+            <div class="header-content">
+                <h1><i class="fas fa-plus-circle"></i> Nueva Membresía</h1>
+                <p>Asigna un plan de membresía a un usuario</p>
             </div>
+            <a href="/admin/memberships" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
 
-            <div class="form-group">
-                <label for="membershipPlanId">Plan de Membresía:</label>
-                <select id="membershipPlanId" th:field="*{membershipPlanId}" required>
-                    <option value="">-- Seleccione un plan --</option>
-                    <option th:each="plan : ${membershipPlans}" th:value="${plan.id}" th:text="${plan.name + ' - $' + #numbers.formatDecimal(plan.price, 1, 2) + ' (' + plan.durationMonths + ' meses)'}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('membershipPlanId')}" th:errors="*{membershipPlanId}" class="error-message"></span>
-            </div>
+        <!-- Mensajes de alerta -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}"></span>
+        </div>
 
-            <div class="form-group">
-                <label for="startDate">Fecha de Inicio:</label>
-                <input type="date" id="startDate" th:field="*{startDate}" required onchange="calculateEndDate()">
-                <span th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}" class="error-message"></span>
-            </div>
+        <form action="/admin/memberships/create" method="post" class="membership-form">
+            <div class="form-container">
+                <!-- Sección de Usuario -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Seleccionar Usuario</h3>
+                    <div class="user-selection">
+                        <div class="search-container">
+                            <input type="text" id="userSearch" placeholder="Buscar usuario por nombre o email..." 
+                                   class="search-input">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                        
+                        <div class="user-grid" id="userGrid">
+                            <div th:each="user : ${users}" class="user-card" th:data-user-id="${user.id}">
+                                <input type="radio" name="userId" th:value="${user.id}" th:id="'user-' + ${user.id}" required>
+                                <label th:for="'user-' + ${user.id}" class="user-label">
+                                    <div class="user-avatar">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="user-info">
+                                        <strong th:text="${user.firstName + ' ' + user.lastName}">Usuario</strong>
+                                        <small th:text="${user.email}">email@ejemplo.com</small>
+                                        <span th:text="${user.phoneNumber}" class="phone">+1234567890</span>
+                                    </div>
+                                    <div class="selection-indicator">
+                                        <i class="fas fa-check"></i>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label for="endDate">Fecha de Vencimiento:</label>
-                <input type="date" id="endDate" th:field="*{endDate}" readonly required>
-                <span th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}" class="error-message"></span>
-            </div>
+                <!-- Sección de Planes -->
+                <div class="form-section">
+                    <h3><i class="fas fa-star"></i> Seleccionar Plan de Membresía</h3>
+                    <div class="plans-grid">
+                        <div th:each="plan : ${plans}" class="plan-card-form" 
+                             th:classappend="${plan.name.contains('Elite') ? 'premium' : (plan.name.contains('Power') ? 'intermediate' : 'basic')}">
+                            <input type="radio" name="planId" th:value="${plan.id}" th:id="'plan-' + ${plan.id}" required>
+                            <label th:for="'plan-' + ${plan.id}" class="plan-label">
+                                <div class="plan-header">
+                                    <span th:if="${plan.name.contains('Elite')}" class="badge">Más beneficios</span>
+                                    <h4 th:text="${plan.name}">Plan</h4>
+                                    <p class="plan-subtitle" th:text="${plan.description}">Descripción del plan</p>
+                                </div>
+                                <div class="plan-details">
+                                    <div class="price-section">
+                                        <h5>💰 Precio:</h5>
+                                        <p class="price">$<span th:text="${#numbers.formatDecimal(plan.price, 0, 'COMMA', 0, 'POINT')}">0</span>/mes</p>
+                                        <p class="duration" th:text="${plan.durationMonths + ' meses de duración'}">12 meses</p>
+                                    </div>
+                                    <div class="benefits-preview">
+                                        <h5>✅ Beneficios incluidos:</h5>
+                                        <ul class="benefits-list-compact">
+                                            <li th:if="${plan.name.contains('Elite')}">
+                                                <span class="icon-check"></span> Acceso ilimitado a todas las sedes
+                                            </li>
+                                            <li th:if="${plan.name.contains('Elite')}">
+                                                <span class="icon-check"></span> Invitados gratuitos (5 por mes)
+                                            </li>
+                                            <li th:if="${plan.name.contains('Elite')}">
+                                                <span class="icon-check"></span> Kronos Spa incluido
+                                            </li>
+                                            <li th:if="${plan.name.contains('Power')}">
+                                                <span class="icon-check"></span> Acceso a sede preferida
+                                            </li>
+                                            <li>
+                                                <span class="icon-check"></span> Plan personalizado con App
+                                            </li>
+                                            <li>
+                                                <span class="icon-check"></span> Seguimiento de progreso
+                                            </li>
+                                            <li>
+                                                <span class="icon-check"></span> Clases grupales dirigidas
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="selection-indicator">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="form-group">
-                <label for="amount">Monto:</label>
-                <input type="number" id="amount" th:field="*{amount}" step="0.01" min="0.01" required>
-                <span th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="error-message"></span>
-            </div>
+                <!-- Sección de Detalles -->
+                <div class="form-section">
+                    <h3><i class="fas fa-calendar-alt"></i> Detalles de la Membresía</h3>
+                    <div class="details-grid">
+                        <div class="form-group">
+                            <label for="startDate">Fecha de Inicio</label>
+                            <input type="date" id="startDate" name="startDate" required 
+                                   th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}"
+                                   class="form-input">
+                            <small class="form-help">La fecha desde la cual será válida la membresía</small>
+                        </div>
 
-            <div class="form-group">
-                <label for="status">Estado:</label>
-                <select id="status" th:field="*{status}" required>
-                    <option value="">-- Seleccione un estado --</option>
-                    <option th:each="status : ${membershipStatuses}" th:value="${status}" th:text="${status}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('status')}" th:errors="*{status}" class="error-message"></span>
-            </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Método de Pago</label>
+                            <select id="paymentMethod" name="paymentMethod" required class="form-select">
+                                <option value="">Seleccionar método de pago</option>
+                                <option th:each="method : ${paymentMethods}" 
+                                        th:value="${method}" 
+                                        th:text="${method.name()}">Método</option>
+                            </select>
+                            <small class="form-help">Cómo el cliente realizó el pago</small>
+                        </div>
 
-            <div class="form-group">
-                <label for="paymentMethod">Método de Pago:</label>
-                <select id="paymentMethod" th:field="*{paymentMethod}" required>
-                    <option value="">-- Seleccione un método --</option>
-                    <option th:each="method : ${paymentMethods}" th:value="${method}" th:text="${method}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}" class="error-message"></span>
-            </div>
+                        <div class="form-group">
+                            <label for="amount">Monto Personalizado (Opcional)</label>
+                            <div class="amount-input-container">
+                                <span class="currency-symbol">$</span>
+                                <input type="number" id="amount" name="amount" step="0.01" min="0" 
+                                       placeholder="Monto automático del plan" class="form-input amount-input">
+                            </div>
+                            <small class="form-help">Deja vacío para usar el precio del plan seleccionado</small>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i> Guardar Membresía
-                </button>
-                <a th:href="@{/admin/memberships}" class="btn-cancel">
-                    <i class="fas fa-times-circle"></i> Cancelar
-                </a>
+                <!-- Resumen -->
+                <div class="form-section summary-section" id="membershipSummary" style="display: none;">
+                    <h3><i class="fas fa-clipboard-check"></i> Resumen de la Membresía</h3>
+                    <div class="summary-content">
+                        <div class="summary-item">
+                            <strong>Usuario:</strong>
+                            <span id="selectedUserName">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Plan:</strong>
+                            <span id="selectedPlanName">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Duración:</strong>
+                            <span id="selectedPlanDuration">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Precio:</strong>
+                            <span id="selectedPlanPrice">-</span>
+                        </div>
+                        <div class="summary-item">
+                            <strong>Fecha de vencimiento (estimada):</strong>
+                            <span id="estimatedEndDate">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">
+                        <i class="fas fa-save"></i> Crear Membresía
+                    </button>
+                    <a href="/admin/memberships" class="btn btn-cancel btn-large">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
             </div>
         </form>
+
+        <style>
+            .form-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .header-content h1 {
+                margin: 0 0 0.5rem 0;
+                font-size: 2rem;
+                font-weight: 700;
+            }
+
+            .form-container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+
+            .form-section {
+                background: white;
+                border-radius: 12px;
+                padding: 2rem;
+                margin-bottom: 2rem;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+
+            .form-section h3 {
+                margin: 0 0 1.5rem 0;
+                color: #374151;
+                font-size: 1.25rem;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            /* Estilos para selección de usuario */
+            .search-container {
+                position: relative;
+                margin-bottom: 1.5rem;
+            }
+
+            .search-input {
+                width: 100%;
+                padding: 1rem 1rem 1rem 3rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                font-size: 1rem;
+            }
+
+            .search-icon {
+                position: absolute;
+                left: 1rem;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #9ca3af;
+            }
+
+            .user-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1rem;
+            }
+
+            .user-card {
+                position: relative;
+            }
+
+            .user-card input[type="radio"] {
+                display: none;
+            }
+
+            .user-label {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.5rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                background: white;
+            }
+
+            .user-label:hover {
+                border-color: #667eea;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            }
+
+            .user-card input:checked + .user-label {
+                border-color: #667eea;
+                background: #f0f4ff;
+            }
+
+            .user-avatar {
+                width: 50px;
+                height: 50px;
+                background: #667eea;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1.25rem;
+            }
+
+            .user-info strong {
+                display: block;
+                color: #111827;
+                margin-bottom: 0.25rem;
+            }
+
+            .user-info small {
+                display: block;
+                color: #6b7280;
+                margin-bottom: 0.25rem;
+            }
+
+            .user-info .phone {
+                color: #9ca3af;
+                font-size: 0.875rem;
+            }
+
+            .selection-indicator {
+                margin-left: auto;
+                opacity: 0;
+                color: #667eea;
+                font-size: 1.25rem;
+                transition: opacity 0.3s ease;
+            }
+
+            .user-card input:checked + .user-label .selection-indicator {
+                opacity: 1;
+            }
+
+            /* Estilos para planes */
+            .plans-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .plan-card-form {
+                position: relative;
+            }
+
+            .plan-card-form input[type="radio"] {
+                display: none;
+            }
+
+            .plan-label {
+                display: block;
+                border: 3px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 2rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                height: 100%;
+                position: relative;
+                background: white;
+            }
+
+            .plan-card-form.premium .plan-label {
+                border-color: #fbbf24;
+            }
+
+            .plan-card-form.intermediate .plan-label {
+                border-color: #8b5cf6;
+            }
+
+            .plan-card-form.basic .plan-label {
+                border-color: #06b6d4;
+            }
+
+            .plan-card-form input:checked + .plan-label {
+                transform: translateY(-8px);
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            }
+
+            .plan-card-form.premium input:checked + .plan-label {
+                border-color: #f59e0b;
+                background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+                color: #92400e;
+            }
+
+            .plan-card-form.intermediate input:checked + .plan-label {
+                border-color: #7c3aed;
+                background: linear-gradient(135deg, #ede9fe 0%, #8b5cf6 100%);
+                color: #5b21b6;
+            }
+
+            .plan-card-form.basic input:checked + .plan-label {
+                border-color: #0891b2;
+                background: linear-gradient(135deg, #cffafe 0%, #06b6d4 100%);
+                color: #164e63;
+            }
+
+            .badge {
+                background: #ef4444;
+                color: white;
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                margin-bottom: 1rem;
+                display: inline-block;
+            }
+
+            .plan-header h4 {
+                margin: 0 0 0.5rem 0;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+
+            .plan-subtitle {
+                color: #6b7280;
+                margin: 0 0 1.5rem 0;
+                font-size: 0.875rem;
+            }
+
+            .price-section {
+                margin-bottom: 1.5rem;
+            }
+
+            .price-section h5 {
+                margin: 0 0 0.5rem 0;
+                font-weight: 600;
+            }
+
+            .price {
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin: 0.5rem 0;
+                color: #059669;
+            }
+
+            .duration {
+                color: #6b7280;
+                font-size: 0.875rem;
+                margin: 0;
+            }
+
+            .benefits-preview h5 {
+                margin: 0 0 0.75rem 0;
+                font-weight: 600;
+            }
+
+            .benefits-list-compact {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .benefits-list-compact li {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+                font-size: 0.875rem;
+            }
+
+            .icon-check {
+                width: 16px;
+                height: 16px;
+                background: #10b981;
+                border-radius: 50%;
+                position: relative;
+                flex-shrink: 0;
+            }
+
+            .icon-check::after {
+                content: '✓';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: white;
+                font-size: 10px;
+                font-weight: bold;
+            }
+
+            .plan-card-form .selection-indicator {
+                position: absolute;
+                top: 1rem;
+                right: 1rem;
+                opacity: 0;
+                color: #059669;
+                font-size: 2rem;
+                transition: opacity 0.3s ease;
+            }
+
+            .plan-card-form input:checked + .plan-label .selection-indicator {
+                opacity: 1;
+            }
+
+            /* Estilos para detalles */
+            .details-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .form-group {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .form-group label {
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                color: #374151;
+            }
+
+            .form-input, .form-select {
+                padding: 0.75rem 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                font-size: 1rem;
+                transition: border-color 0.3s ease;
+            }
+
+            .form-input:focus, .form-select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+            .amount-input-container {
+                position: relative;
+            }
+
+            .currency-symbol {
+                position: absolute;
+                left: 1rem;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #6b7280;
+                font-weight: 600;
+            }
+
+            .amount-input {
+                padding-left: 2rem;
+            }
+
+            .form-help {
+                margin-top: 0.5rem;
+                color: #6b7280;
+                font-size: 0.875rem;
+            }
+
+            /* Resumen */
+            .summary-section {
+                background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+                border: 2px solid #667eea;
+            }
+
+            .summary-content {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+
+            .summary-item {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            .summary-item strong {
+                color: #374151;
+                font-size: 0.875rem;
+            }
+
+            .summary-item span {
+                color: #111827;
+                font-weight: 600;
+            }
+
+            /* Acciones */
+            .form-actions {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                margin-top: 2rem;
+            }
+
+            .btn-large {
+                padding: 1rem 2rem;
+                font-size: 1.125rem;
+                font-weight: 600;
+            }
+
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                text-decoration: none;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: none;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .btn-primary {
+                background: #667eea;
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background: #5a67d8;
+                transform: translateY(-2px);
+            }
+
+            .btn-secondary {
+                background: #6b7280;
+                color: white;
+            }
+
+            .btn-cancel {
+                background: #f3f4f6;
+                color: #374151;
+            }
+
+            .alert {
+                padding: 1rem;
+                border-radius: 8px;
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .alert-success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+
+            .alert-error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fca5a5;
+            }
+
+            @media (max-width: 768px) {
+                .form-header {
+                    flex-direction: column;
+                    gap: 1rem;
+                    text-align: center;
+                }
+
+                .user-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .plans-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .details-grid {
+                    grid-template-columns: 1fr;
+                }
+
+                .form-actions {
+                    flex-direction: column;
+                }
+            }
+        </style>
+
+        <script>
+            // Búsqueda de usuarios
+            document.getElementById('userSearch').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const userCards = document.querySelectorAll('.user-card');
+                
+                userCards.forEach(card => {
+                    const label = card.querySelector('.user-label');
+                    const text = label.textContent.toLowerCase();
+                    
+                    if (text.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+
+            // Actualizar resumen cuando se seleccionen opciones
+            function updateSummary() {
+                const selectedUser = document.querySelector('input[name="userId"]:checked');
+                const selectedPlan = document.querySelector('input[name="planId"]:checked');
+                const startDate = document.getElementById('startDate').value;
+
+                if (selectedUser && selectedPlan) {
+                    const userLabel = selectedUser.parentElement.querySelector('.user-label');
+                    const userName = userLabel.querySelector('strong').textContent;
+                    
+                    const planLabel = selectedPlan.parentElement.querySelector('.plan-label');
+                    const planName = planLabel.querySelector('h4').textContent;
+                    const planPrice = planLabel.querySelector('.price').textContent;
+                    const planDuration = planLabel.querySelector('.duration').textContent;
+
+                    document.getElementById('selectedUserName').textContent = userName;
+                    document.getElementById('selectedPlanName').textContent = planName;
+                    document.getElementById('selectedPlanPrice').textContent = planPrice;
+                    document.getElementById('selectedPlanDuration').textContent = planDuration;
+
+                    // Calcular fecha de vencimiento estimada
+                    if (startDate) {
+                        const start = new Date(startDate);
+                        const durationMonths = parseInt(planDuration.match(/\d+/)[0]);
+                        const endDate = new Date(start.getFullYear(), start.getMonth() + durationMonths, start.getDate());
+                        document.getElementById('estimatedEndDate').textContent = endDate.toLocaleDateString('es-ES');
+                    }
+
+                    document.getElementById('membershipSummary').style.display = 'block';
+                } else {
+                    document.getElementById('membershipSummary').style.display = 'none';
+                }
+            }
+
+            // Event listeners para actualizar el resumen
+            document.addEventListener('change', function(e) {
+                if (e.target.name === 'userId' || e.target.name === 'planId' || e.target.id === 'startDate') {
+                    updateSummary();
+                }
+            });
+
+            // Autocompletar cantidad con el precio del plan
+            document.addEventListener('change', function(e) {
+                if (e.target.name === 'planId') {
+                    const planLabel = e.target.parentElement.querySelector('.plan-label');
+                    const priceText = planLabel.querySelector('.price').textContent;
+                    const price = priceText.replace(/[^\d]/g, ''); // Extraer solo números
+                    document.getElementById('amount').placeholder = `$${price} (precio del plan)`;
+                }
+            });
+
+            // Establecer fecha de hoy como mínima
+            document.getElementById('startDate').min = new Date().toISOString().split('T')[0];
+        </script>
     </div>
-</section>
-
-<script th:src="@{/js/admin-dashboard.js}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const membershipPlanIdSelect = document.getElementById('membershipPlanId');
-        const startDateInput = document.getElementById('startDate');
-
-        if (membershipPlanIdSelect.value && startDateInput.value) {
-            calculateEndDate();
-        }
-
-        membershipPlanIdSelect.addEventListener('change', calculateEndDate);
-    });
-
-    function calculateEndDate() {
-        const membershipPlanId = document.getElementById('membershipPlanId').value;
-        const startDateStr = document.getElementById('startDate').value;
-        const endDateInput = document.getElementById('endDate');
-        const amountInput = document.getElementById('amount');
-
-        if (membershipPlanId && startDateStr) {
-            const startDate = new Date(startDateStr + 'T00:00:00');
-
-            fetch(`/admin/memberships/getPlanDuration/${membershipPlanId}`)
-                .then(response => response.json())
-                .then(durationMonths => {
-                    const endDate = new Date(startDate);
-                    endDate.setMonth(startDate.getMonth() + durationMonths);
-                    endDate.setDate(endDate.getDate() - 1);
-                    endDateInput.value = endDate.toISOString().split('T')[0];
-                })
-                .catch(() => endDateInput.value = '');
-
-            fetch(`/admin/memberships/getPlanPrice/${membershipPlanId}`)
-                .then(response => response.json())
-                .then(price => amountInput.value = parseFloat(price).toFixed(2))
-                .catch(() => amountInput.value = '0.00');
-        } else {
-            endDateInput.value = '';
-            amountInput.value = '';
-        }
-    }
-</script>
-
 </body>
 </html>

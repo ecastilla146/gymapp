@@ -1,83 +1,669 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout-admin :: layout(~{::title}, ~{::content})}">
 <head>
-    <meta charset="UTF-8">
-    <title>Gestión de Membresías</title>
-    <!-- Enlace al CSS que pusiste en static -->
-    <link rel="stylesheet" th:href="@{/css/memberships.css}">
-    <!-- Iconos Font Awesome si los usas -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Gestión de Membresías - KRONOS</title>
 </head>
 <body>
+    <div th:fragment="content">
+        <!-- Header con estadísticas -->
+        <div class="membership-header">
+            <div class="header-content">
+                <h1><i class="fas fa-id-card"></i> Gestión de Membresías</h1>
+                <p>Administra las membresías de todos los usuarios del gimnasio</p>
+            </div>
+            
+            <!-- Estadísticas rápidas -->
+            <div class="stats-grid">
+                <div class="stat-card active">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.active}">0</h3>
+                        <p>Activas</p>
+                    </div>
+                </div>
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.total}">0</h3>
+                        <p>Total</p>
+                    </div>
+                </div>
+                <div class="stat-card expired">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.expired}">0</h3>
+                        <p>Expiradas</p>
+                    </div>
+                </div>
+                <div class="stat-card suspended">
+                    <div class="stat-icon">
+                        <i class="fas fa-pause-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 th:text="${stats.suspended}">0</h3>
+                        <p>Suspendidas</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<section th:fragment="content" class="dashboard-section">
-    <h3><i class="fas fa-credit-card"></i> Gestión de Membresías</h3>
+        <!-- Mensajes de alerta -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${errorMessage}"></span>
+        </div>
 
-    <a th:href="@{/admin/memberships/new}" class="btn-primary">
-        <i class="fas fa-plus-circle"></i> Nueva Membresía
-    </a>
+        <!-- Membresías que expiran pronto -->
+        <div th:if="${!expiringMemberships.isEmpty()}" class="expiring-alert">
+            <div class="alert-header">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Membresías que expiran en los próximos 7 días</h3>
+            </div>
+            <div class="expiring-list">
+                <div th:each="membership : ${expiringMemberships}" class="expiring-item">
+                    <div class="user-info">
+                        <strong th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Usuario</strong>
+                        <span th:text="${membership.user.email}">email@ejemplo.com</span>
+                    </div>
+                    <div class="plan-info">
+                        <span th:text="${membership.membershipPlan.name}">Plan</span>
+                    </div>
+                    <div class="expiry-date">
+                        <span>Expira:</span>
+                        <strong th:text="${#temporals.format(membership.endDate, 'dd/MM/yyyy')}">01/01/2024</strong>
+                    </div>
+                    <a th:href="@{/admin/memberships/{id}(id=${membership.id})}" class="btn-view">Ver</a>
+                </div>
+            </div>
+        </div>
 
-    <div th:if="${successMessage}" class="alert success">
-        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+        <!-- Barra de acciones y filtros -->
+        <div class="action-bar">
+            <div class="left-actions">
+                <a href="/admin/memberships/new" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva Membresía
+                </a>
+                <form action="/admin/memberships/update-expired" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">
+                        <i class="fas fa-sync"></i> Actualizar Expiradas
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Filtros avanzados -->
+            <div class="filters-container">
+                <form method="get" action="/admin/memberships" class="filters-form">
+                    <div class="filter-group">
+                        <input type="text" name="userEmail" th:value="${userEmail}" 
+                               placeholder="Buscar por email..." class="filter-input">
+                    </div>
+                    <div class="filter-group">
+                        <select name="status" class="filter-select">
+                            <option value="">Todos los estados</option>
+                            <option th:each="statusOption : ${membershipStatuses}"
+                                    th:value="${statusOption}" 
+                                    th:text="${statusOption.name()}"
+                                    th:selected="${statusOption == status}">Estado</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <input type="date" name="startDate" th:value="${startDate}" 
+                               class="filter-input" placeholder="Fecha inicio">
+                    </div>
+                    <div class="filter-group">
+                        <input type="date" name="endDate" th:value="${endDate}" 
+                               class="filter-input" placeholder="Fecha fin">
+                    </div>
+                    <button type="submit" class="btn btn-filter">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="/admin/memberships" class="btn btn-reset">
+                        <i class="fas fa-times"></i> Limpiar
+                    </a>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabla de membresías -->
+        <div class="table-container">
+            <table class="memberships-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <a th:href="@{/admin/memberships(sortBy='user.firstName', sortDir=${sortBy == 'user.firstName' and sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                Usuario <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{/admin/memberships(sortBy='membershipPlan.name', sortDir=${sortBy == 'membershipPlan.name' and sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                Plan <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{/admin/memberships(sortBy='startDate', sortDir=${sortBy == 'startDate' and sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                Inicio <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{/admin/memberships(sortBy='endDate', sortDir=${sortBy == 'endDate' and sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                Vencimiento <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a th:href="@{/admin/memberships(sortBy='status', sortDir=${sortBy == 'status' and sortDir == 'asc' ? 'desc' : 'asc'})}">
+                                Estado <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>Monto</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="membership : ${memberships.content}" 
+                        th:class="${membership.status.name() == 'EXPIRED' ? 'row-expired' : ''}">
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="user-details">
+                                    <strong th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Usuario</strong>
+                                    <small th:text="${membership.user.email}">email@ejemplo.com</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="plan-cell">
+                                <span class="plan-name" th:text="${membership.membershipPlan.name}">Plan</span>
+                                <small th:text="${membership.membershipPlan.durationMonths + ' meses'}">12 meses</small>
+                            </div>
+                        </td>
+                        <td th:text="${#temporals.format(membership.startDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                        <td th:text="${#temporals.format(membership.endDate, 'dd/MM/yyyy')}">01/01/2025</td>
+                        <td>
+                            <span class="status-badge" 
+                                  th:classappend="${membership.status.name().toLowerCase()}"
+                                  th:text="${membership.status.name()}">ACTIVE</span>
+                        </td>
+                        <td class="amount-cell">$<span th:text="${#numbers.formatDecimal(membership.amount, 0, 'COMMA', 0, 'POINT')}">0</span></td>
+                        <td>
+                            <div class="action-buttons">
+                                <a th:href="@{/admin/memberships/{id}(id=${membership.id})}" 
+                                   class="btn btn-sm btn-view" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a th:href="@{/admin/memberships/{id}/edit(id=${membership.id})}" 
+                                   class="btn btn-sm btn-edit" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-more" title="Más acciones">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-content">
+                                        <form th:if="${membership.status.name() == 'ACTIVE'}" 
+                                              th:action="@{/admin/memberships/{id}/renew(id=${membership.id})}" 
+                                              method="post" style="display: inline;">
+                                            <input type="hidden" name="paymentMethod" value="CARD">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-redo"></i> Renovar
+                                            </button>
+                                        </form>
+                                        <form th:if="${membership.status.name() == 'ACTIVE'}" 
+                                              th:action="@{/admin/memberships/{id}/suspend(id=${membership.id})}" 
+                                              method="post" style="display: inline;">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-pause"></i> Suspender
+                                            </button>
+                                        </form>
+                                        <form th:if="${membership.status.name() == 'SUSPENDED'}" 
+                                              th:action="@{/admin/memberships/{id}/reactivate(id=${membership.id})}" 
+                                              method="post" style="display: inline;">
+                                            <button type="submit" class="dropdown-item">
+                                                <i class="fas fa-play"></i> Reactivar
+                                            </button>
+                                        </form>
+                                        <form th:if="${membership.status.name() == 'ACTIVE'}" 
+                                              th:action="@{/admin/memberships/{id}/cancel(id=${membership.id})}" 
+                                              method="post" style="display: inline;"
+                                              onsubmit="return confirm('¿Estás seguro de cancelar esta membresía?')">
+                                            <button type="submit" class="dropdown-item danger">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <div th:if="${memberships.totalPages > 1}" class="pagination-container">
+            <div class="pagination-info">
+                Mostrando <span th:text="${memberships.size}">10</span> de 
+                <span th:text="${memberships.totalElements}">100</span> resultados
+            </div>
+            
+            <div class="pagination">
+                <a th:if="${memberships.hasPrevious()}" 
+                   th:href="@{/admin/memberships(page=${currentPage - 1}, size=${memberships.size})}"
+                   class="pagination-btn">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                
+                <span th:each="pageNum : ${#numbers.sequence(0, memberships.totalPages - 1)}"
+                      th:if="${pageNum >= currentPage - 2 and pageNum <= currentPage + 2}">
+                    <a th:if="${pageNum != currentPage}"
+                       th:href="@{/admin/memberships(page=${pageNum}, size=${memberships.size})}"
+                       th:text="${pageNum + 1}"
+                       class="pagination-btn">1</a>
+                    <span th:if="${pageNum == currentPage}"
+                          th:text="${pageNum + 1}"
+                          class="pagination-btn active">1</span>
+                </span>
+                
+                <a th:if="${memberships.hasNext()}" 
+                   th:href="@{/admin/memberships(page=${currentPage + 1}, size=${memberships.size})}"
+                   class="pagination-btn">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+
+        <style>
+            .membership-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem;
+                border-radius: 12px;
+                margin-bottom: 2rem;
+            }
+
+            .header-content h1 {
+                margin: 0 0 0.5rem 0;
+                font-size: 2rem;
+                font-weight: 700;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-top: 1.5rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 8px;
+                padding: 1.5rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .stat-icon {
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+            }
+
+            .stat-card.active .stat-icon { background: #10b981; }
+            .stat-card.total .stat-icon { background: #3b82f6; }
+            .stat-card.expired .stat-icon { background: #f59e0b; }
+            .stat-card.suspended .stat-icon { background: #ef4444; }
+
+            .stat-info h3 {
+                margin: 0;
+                font-size: 2rem;
+                font-weight: 700;
+            }
+
+            .stat-info p {
+                margin: 0;
+                opacity: 0.9;
+            }
+
+            .expiring-alert {
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin-bottom: 2rem;
+            }
+
+            .alert-header {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                color: #92400e;
+                margin-bottom: 1rem;
+            }
+
+            .expiring-list {
+                display: grid;
+                gap: 0.75rem;
+            }
+
+            .expiring-item {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr auto;
+                gap: 1rem;
+                align-items: center;
+                background: white;
+                padding: 1rem;
+                border-radius: 6px;
+                border-left: 4px solid #f59e0b;
+            }
+
+            .action-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 2rem;
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+
+            .filters-form {
+                display: flex;
+                gap: 0.75rem;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+
+            .filter-input, .filter-select {
+                padding: 0.5rem 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                font-size: 0.875rem;
+            }
+
+            .table-container {
+                background: white;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+
+            .memberships-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .memberships-table th {
+                background: #f9fafb;
+                padding: 1rem;
+                text-align: left;
+                font-weight: 600;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .memberships-table td {
+                padding: 1rem;
+                border-bottom: 1px solid #f3f4f6;
+            }
+
+            .user-cell {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .user-avatar {
+                width: 40px;
+                height: 40px;
+                background: #667eea;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }
+
+            .user-details strong {
+                display: block;
+                color: #111827;
+            }
+
+            .user-details small {
+                color: #6b7280;
+            }
+
+            .plan-cell .plan-name {
+                display: block;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            .plan-cell small {
+                color: #6b7280;
+            }
+
+            .status-badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 12px;
+                font-size: 0.75rem;
+                font-weight: 600;
+                text-transform: uppercase;
+            }
+
+            .status-badge.active {
+                background: #d1fae5;
+                color: #065f46;
+            }
+
+            .status-badge.expired {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            .status-badge.suspended {
+                background: #fee2e2;
+                color: #991b1b;
+            }
+
+            .status-badge.cancelled {
+                background: #f3f4f6;
+                color: #6b7280;
+            }
+
+            .amount-cell {
+                font-weight: 600;
+                color: #059669;
+            }
+
+            .action-buttons {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+
+            .btn-sm {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.75rem;
+            }
+
+            .btn-view { background: #3b82f6; color: white; }
+            .btn-edit { background: #f59e0b; color: white; }
+            .btn-more { background: #6b7280; color: white; }
+
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                right: 0;
+                background: white;
+                min-width: 160px;
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                border-radius: 6px;
+                z-index: 1;
+                border: 1px solid #e5e7eb;
+            }
+
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+
+            .dropdown-item {
+                display: block;
+                width: 100%;
+                padding: 0.75rem 1rem;
+                text-align: left;
+                border: none;
+                background: none;
+                cursor: pointer;
+                text-decoration: none;
+                color: #374151;
+            }
+
+            .dropdown-item:hover {
+                background: #f9fafb;
+            }
+
+            .dropdown-item.danger {
+                color: #dc2626;
+            }
+
+            .pagination-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 2rem;
+                padding: 1rem 0;
+            }
+
+            .pagination {
+                display: flex;
+                gap: 0.5rem;
+                align-items: center;
+            }
+
+            .pagination-btn {
+                padding: 0.5rem 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                text-decoration: none;
+                color: #374151;
+                background: white;
+            }
+
+            .pagination-btn:hover {
+                background: #f9fafb;
+            }
+
+            .pagination-btn.active {
+                background: #667eea;
+                color: white;
+                border-color: #667eea;
+            }
+
+            .alert {
+                padding: 1rem;
+                border-radius: 6px;
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .alert-success {
+                background: #d1fae5;
+                color: #065f46;
+                border: 1px solid #a7f3d0;
+            }
+
+            .alert-error {
+                background: #fee2e2;
+                color: #991b1b;
+                border: 1px solid #fca5a5;
+            }
+
+            .btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 6px;
+                text-decoration: none;
+                font-weight: 600;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .btn-primary {
+                background: #667eea;
+                color: white;
+            }
+
+            .btn-secondary {
+                background: #6b7280;
+                color: white;
+            }
+
+            .btn-filter {
+                background: #059669;
+                color: white;
+            }
+
+            .btn-reset {
+                background: #f3f4f6;
+                color: #374151;
+            }
+
+            .row-expired {
+                background: #fef3c7;
+            }
+
+            @media (max-width: 768px) {
+                .stats-grid {
+                    grid-template-columns: repeat(2, 1fr);
+                }
+                
+                .action-bar {
+                    flex-direction: column;
+                    align-items: stretch;
+                }
+                
+                .filters-form {
+                    justify-content: center;
+                }
+                
+                .expiring-item {
+                    grid-template-columns: 1fr;
+                    text-align: center;
+                }
+            }
+        </style>
+
+        <script>
+            // Auto-refresh para obtener nuevas membresías cada 30 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 30000);
+        </script>
     </div>
-    <div th:if="${errorMessage}" class="alert error">
-        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
-    </div>
-
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Plan</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Vencimiento</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>Método de Pago</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="membership : ${memberships}">
-                    <td th:text="${membership.id}">1</td>
-                    <td th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Juan Pérez</td>
-                    <td th:text="${membership.membershipPlan.name}">Mensual</td>
-                    <td th:text="${#temporals.format(membership.startDate, 'dd-MM-yyyy')}">01-01-2024</td>
-                    <td th:text="${#temporals.format(membership.endDate, 'dd-MM-yyyy')}">01-02-2024</td>
-                    <td th:text="${#numbers.formatCurrency(membership.amount)}">$30.00</td>
-                    <td>
-                        <span class="membership-status-label" th:classappend="'enabled-' + ${membership.status}" th:text="${membership.status}"></span>
-                    </td>
-                    <td th:text="${membership.paymentMethod}">Tarjeta</td>
-                    <td class="action-buttons">
-                        <a th:href="@{/admin/memberships/edit/{id}(id=${membership.id})}" class="btn-edit" title="Editar">
-                            <i class="fas fa-edit"></i> <span class="action-text">Editar</span>
-                        </a>
-                        <a th:href="@{/admin/memberships/details/{id}(id=${membership.id})}" class="btn-details" title="Ver Detalles">
-                            <i class="fas fa-eye"></i> <span class="action-text">Ver</span>
-                        </a>
-                        <form th:action="@{/admin/memberships/delete/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta membresía?');" style="display:inline;">
-                            <button type="submit" class="btn-delete" title="Eliminar"><i class="fas fa-trash-alt"></i> <span class="action-text">Eliminar</span></button>
-                        </form>
-                        <form th:action="@{/admin/memberships/renew/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres renovar esta membresía? Esto actualizará su fecha de inicio y vencimiento a partir de hoy.');" style="display:inline;">
-                            <button type="submit" class="btn-renew" title="Renovar" th:if="${membership.status.name() != ''}">
-                                <i class="fas fa-sync-alt"></i> <span class="action-text">Renovar</span>
-                            </button>
-                        </form>
-                        <a href="#" class="btn-receipt" title="Generar Recibo" onclick="alert('Funcionalidad de generar recibo en desarrollo.');">
-                            <i class="fas fa-receipt"></i> <span class="action-text">Recibo</span>
-                        </a>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(memberships)}">
-                    <td colspan="9" style="text-align: center;">No hay membresías registradas.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
-
 </body>
 </html>

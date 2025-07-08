@@ -30,4 +30,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // Método para obtener usuarios activos ordenados por nombre
     List<User> findByEnabledTrueOrderByFirstNameAsc();
+
+    List<User> findByRoles_Name(String roleName);
+    
+    // Método para buscar usuarios por email (búsqueda parcial)
+    List<User> findByEmailContainingIgnoreCase(String email);
 }
