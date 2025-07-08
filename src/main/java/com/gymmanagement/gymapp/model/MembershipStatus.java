@@ -4,5 +4,6 @@ public enum MembershipStatus {
     ACTIVE,
     EXPIRED,
     PENDING_PAYMENT,
-    CANCELLED
+    CANCELLED,
+    SUSPENDED
 }

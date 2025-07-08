@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors; // ¡Importación necesaria para Collectors!
+import java.util.stream.Collectors;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -25,6 +25,13 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * Entidad que representa un usuario del sistema de gestión de gimnasio.
+ * Un usuario puede tener múltiples roles y membresías asociadas.
+ * 
+ * @author Gym Management System
+ * @version 1.0
+ */
 @Entity
 @Table(name = "users")
 public class User {
@@ -63,55 +70,144 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Column(name = "enabled", nullable = false)
-    private boolean enabled; // Para activar/desactivar cuentas
+    private boolean enabled = true;
 
+    /**
+     * Roles asignados al usuario.
+     * Utiliza Set para evitar roles duplicados y EAGER fetch para cargar roles inmediatamente.
+     */
     @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
         name = "users_roles",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles = new HashSet<>(); // Usa Set para evitar roles duplicados
+    private Set<Role> roles = new HashSet<>();
 
-    // RELACIÓN ONE-TO-MANY CON MEMBRESIAS
-    // Un usuario puede tener muchas membresías
+    /**
+     * Membresías asociadas al usuario.
+     * Un usuario puede tener múltiples membresías a lo largo del tiempo.
+     */
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Membership> memberships = new ArrayList<>(); // Inicializar para evitar NullPointerException
+    private List<Membership> memberships = new ArrayList<>();
 
-    // Constructor vacío (requerido por JPA)
+    // --- Constructores ---
+
+    /**
+     * Constructor vacío requerido por JPA.
+     */
     public User() {
-        // Las fechas y el estado habilitado se manejarán con @PrePersist.
-        // No es necesario inicializar createdAt, updatedAt, enabled aquí,
-        // ya que @PrePersist se encargará de ello antes de la primera persistencia.
+        // Los valores por defecto se establecen en @PrePersist
     }
 
-    // Constructor para registro (sin ID, con valores por defecto)
+    /**
+     * Constructor para crear un nuevo usuario con datos básicos.
+     * 
+     * @param username Nombre de usuario único
+     * @param password Contraseña (debe ser encriptada antes de guardar)
+     * @param email Email único del usuario
+     * @param firstName Nombre del usuario
+     * @param lastName Apellido del usuario
+     */
     public User(String username, String password, String email, String firstName, String lastName) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
-        // Las fechas y el estado habilitado se manejarán con @PrePersist.
     }
 
-    // Métodos de ciclo de vida de JPA para `createdAt` y `updatedAt`
+    // --- Métodos de ciclo de vida JPA ---
+
+    /**
+     * Establece valores por defecto antes de persistir la entidad.
+     */
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        // Corrección aquí: 'enabled' es un boolean primitivo, no puede ser 'null'.
-        // Si necesitas un valor por defecto para 'enabled' cuando se crea un nuevo usuario,
-        // puedes establecerlo directamente aquí o en el constructor si no se pasa.
-        // Por ejemplo, para que un nuevo usuario esté habilitado por defecto:
-        this.enabled = true; // Si no se ha asignado antes.
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+        // Si enabled no ha sido establecido, se establece como true por defecto
+        if (!this.enabled) {
+            this.enabled = true;
+        }
     }
 
+    /**
+     * Actualiza la fecha de modificación antes de actualizar la entidad.
+     */
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
 
+    // --- Métodos de utilidad para relaciones ---
+
+    /**
+     * Agrega un rol al usuario de forma segura.
+     * 
+     * @param role Rol a agregar
+     */
+    public void addRole(Role role) {
+        if (role != null) {
+            this.roles.add(role);
+        }
+    }
+
+    /**
+     * Remueve un rol del usuario de forma segura.
+     * 
+     * @param role Rol a remover
+     */
+    public void removeRole(Role role) {
+        if (role != null) {
+            this.roles.remove(role);
+        }
+    }
+
+    /**
+     * Agrega una membresía al usuario manteniendo la relación bidireccional.
+     * 
+     * @param membership Membresía a agregar
+     */
+    public void addMembership(Membership membership) {
+        if (membership != null) {
+            this.memberships.add(membership);
+            membership.setUser(this);
+        }
+    }
+
+    /**
+     * Remueve una membresía del usuario manteniendo la relación bidireccional.
+     * 
+     * @param membership Membresía a remover
+     */
+    public void removeMembership(Membership membership) {
+        if (membership != null) {
+            this.memberships.remove(membership);
+            membership.setUser(null);
+        }
+    }
+
+    /**
+     * Obtiene el nombre completo del usuario.
+     * 
+     * @return Nombre completo (firstName + lastName)
+     */
+    public String getFullName() {
+        return String.format("%s %s", firstName, lastName).trim();
+    }
+
+    /**
+     * Verifica si el usuario tiene un rol específico.
+     * 
+     * @param roleName Nombre del rol a verificar
+     * @return true si el usuario tiene el rol, false en caso contrario
+     */
+    public boolean hasRole(String roleName) {
+        return roles.stream()
+                .anyMatch(role -> role.getName().equals(roleName));
+    }
 
     // --- Getters y Setters ---
 
@@ -192,49 +288,42 @@ public class User {
     }
 
     public void setRoles(Set<Role> roles) {
-        this.roles = roles;
+        this.roles = roles != null ? roles : new HashSet<>();
     }
 
-    public void addRole(Role role) {
-        this.roles.add(role);
-    }
-
-    public void removeRole(Role role) {
-        this.roles.remove(role);
-    }
-
-    // GETTERS Y SETTERS PARA MEMBERSHIPS
     public List<Membership> getMemberships() {
         return memberships;
     }
 
     public void setMemberships(List<Membership> memberships) {
-        this.memberships = memberships;
+        this.memberships = memberships != null ? memberships : new ArrayList<>();
     }
 
-    // Métodos de utilidad para manejar la relación bidireccional si es necesario
-    public void addMembership(Membership membership) {
-        this.memberships.add(membership);
-        membership.setUser(this);
-    }
-
-    public void removeMembership(Membership membership) {
-        this.memberships.remove(membership);
-        membership.setUser(null);
-    }
+    // --- Métodos Object ---
 
     @Override
     public String toString() {
-        return "User{" +
-               "id=" + id +
-               ", username='" + username + '\'' +
-               ", email='" + email + '\'' +
-               ", firstName='" + firstName + '\'' +
-               ", lastName='" + lastName + '\'' +
-               ", enabled=" + enabled +
-               // Corrección aquí: Asegúrate de que 'roles' no sea nulo antes de llamar a stream()
-               // Aunque 'roles' está inicializado como 'new HashSet<>()', esta comprobación es defensiva
-               ", roles=" + (roles != null ? roles.stream().map(Role::getName).collect(Collectors.joining(", ")) : "[]") +
-               '}';
+        String roleNames = roles != null 
+            ? roles.stream().map(Role::getName).collect(Collectors.joining(", "))
+            : "[]";
+            
+        return String.format(
+            "User{id=%d, username='%s', email='%s', firstName='%s', lastName='%s', enabled=%s, roles=[%s]}",
+            id, username, email, firstName, lastName, enabled, roleNames
+        );
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        
+        User user = (User) obj;
+        return id != null && id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : 0;
     }
 }

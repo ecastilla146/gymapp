@@ -18,14 +18,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import com.gymmanagement.gymapp.config.AppConstants;
 import com.gymmanagement.gymapp.dto.UserRegistrationDto;
 import com.gymmanagement.gymapp.model.Role;
 import com.gymmanagement.gymapp.model.User;
 import com.gymmanagement.gymapp.repository.RoleRepository;
 import com.gymmanagement.gymapp.repository.UserRepository;
 
+/**
+ * Servicio para la gestión de usuarios del sistema.
+ * Implementa UserDetailsService para la integración con Spring Security.
+ * 
+ * @author Gym Management System
+ * @version 1.0
+ */
 @Service
+@Transactional(readOnly = true)
 public class UserService implements UserDetailsService {
+
+    // Se usan las constantes centralizadas de AppConstants
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -38,107 +49,249 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    // --- Implementación de UserDetailsService ---
+
+    /**
+     * Carga un usuario por su email para la autenticación de Spring Security.
+     * 
+     * @param email Email del usuario
+     * @return UserDetails para Spring Security
+     * @throws UsernameNotFoundException Si no se encuentra el usuario
+     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         if (!StringUtils.hasText(email)) {
             throw new UsernameNotFoundException("El email no puede ser nulo o vacío.");
         }
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
+        
+        User user = userRepository.findByEmail(email.trim())
+                .orElseThrow(() -> new UsernameNotFoundException(AppConstants.ErrorMessages.USER_NOT_FOUND_EMAIL + email));
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
                 user.isEnabled(),
-                true, true, true,
+                true, // accountNonExpired
+                true, // credentialsNonExpired  
+                true, // accountNonLocked
                 user.getRoles()
         );
     }
 
+    // --- Operaciones CRUD ---
+
+    /**
+     * Guarda o actualiza un usuario basado en el DTO de registro.
+     * 
+     * @param registrationDto Datos del usuario a guardar
+     * @return Usuario guardado
+     * @throws RuntimeException Si ocurre un error durante el guardado
+     */
     @Transactional
     public User saveUser(UserRegistrationDto registrationDto) {
-        User user;
-        if (registrationDto.getId() != null) {
-            user = userRepository.findById(registrationDto.getId())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado para edición con ID: " + registrationDto.getId()));
-            user.setUpdatedAt(LocalDateTime.now());
-        } else {
-            user = new User();
-            user.setCreatedAt(LocalDateTime.now()); // @PrePersist ya lo maneja si no hay constructor con args
-            user.setEnabled(true); // Asegúrate de que los nuevos usuarios estén habilitados
-        }
-
-        user.setUsername(registrationDto.getUsername());
-        user.setEmail(registrationDto.getEmail());
-        user.setFirstName(registrationDto.getFirstName());
-        user.setLastName(registrationDto.getLastName());
-        user.setEnabled(registrationDto.isEnabled());
-
-        if (StringUtils.hasText(registrationDto.getPassword())) {
-            user.setPassword(passwordEncoder.encode(registrationDto.getPassword()));
-        } else if (registrationDto.getId() == null) {
-            // Esto solo debería pasar si la validación del DTO no funcionó correctamente
-            throw new RuntimeException("La contraseña es requerida para nuevos usuarios.");
-        }
-
-        if (registrationDto.getSelectedRoles() != null && !registrationDto.getSelectedRoles().isEmpty()) {
-            Set<Role> roles = registrationDto.getSelectedRoles().stream()
-                    .map(roleName -> roleRepository.findByName(roleName)
-                            .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName)))
-                    .collect(Collectors.toSet());
-            user.setRoles(roles);
-        } else {
-            // Asigna un rol por defecto si no se selecciona ninguno
-            Role defaultRole = roleRepository.findByName(Role.RoleName.ROLE_CLIENT.getFullName())
-                                .orElseThrow(() -> new RuntimeException("Rol por defecto ROLE_CLIENT no encontrado en la base de datos."));
-            user.setRoles(Collections.singleton(defaultRole));
-        }
-
+        User user = determineUserToSave(registrationDto);
+        populateUserData(user, registrationDto);
+        assignRoles(user, registrationDto.getSelectedRoles());
+        
         return userRepository.save(user);
     }
 
+    /**
+     * Busca un usuario por su nombre de usuario.
+     * 
+     * @param username Nombre de usuario a buscar
+     * @return Optional con el usuario si existe
+     */
     public Optional<User> findByUsername(String username) {
         if (!StringUtils.hasText(username)) {
             return Optional.empty();
         }
-        return userRepository.findByUsername(username);
+        return userRepository.findByUsername(username.trim());
     }
 
+    /**
+     * Busca un usuario por su email.
+     * 
+     * @param email Email a buscar
+     * @return Optional con el usuario si existe
+     */
     public Optional<User> findByEmail(String email) {
         if (!StringUtils.hasText(email)) {
             return Optional.empty();
         }
-        return userRepository.findByEmail(email);
+        return userRepository.findByEmail(email.trim());
     }
 
+    /**
+     * Busca un usuario por su ID.
+     * 
+     * @param id ID del usuario
+     * @return Optional con el usuario si existe
+     */
+    public Optional<User> findUserById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return userRepository.findById(id);
+    }
+
+    /**
+     * Obtiene todos los usuarios con paginación.
+     * 
+     * @param pageable Información de paginación
+     * @return Página de usuarios
+     */
     public Page<User> findAllUsers(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
-    public List<User> findAllUsers() { // Nuevo método para obtener todos los usuarios sin paginación (para selectbox)
+    /**
+     * Obtiene todos los usuarios sin paginación.
+     * Útil para selectboxes y listados simples.
+     * 
+     * @return Lista de todos los usuarios
+     */
+    public List<User> findAllUsers() {
         return userRepository.findAll();
     }
 
+    /**
+     * Obtiene todos los usuarios activos ordenados por nombre.
+     * 
+     * @return Lista de usuarios activos
+     */
+    public List<User> findAllActiveUsers() {
+        return userRepository.findByEnabledTrueOrderByFirstNameAsc();
+    }
+
+    /**
+     * Busca usuarios por palabra clave con paginación.
+     * 
+     * @param keyword Término de búsqueda
+     * @param pageable Información de paginación
+     * @return Página de usuarios que coinciden con la búsqueda
+     */
     public Page<User> searchUsers(String keyword, Pageable pageable) {
-        String actualKeyword = keyword != null ? keyword : "";
-        return userRepository.searchUsers(actualKeyword, pageable);
+        String searchTerm = StringUtils.hasText(keyword) ? keyword.trim() : "";
+        return userRepository.searchUsers(searchTerm, pageable);
     }
 
-    public Optional<User> findUserById(Long id) {
-        return userRepository.findById(id);
+    /**
+     * Busca usuarios por email (para autocompletado)
+     */
+    public List<User> searchUsersByEmail(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return userRepository.findByEmailContainingIgnoreCase(query.trim())
+                .stream()
+                .limit(10) // Limitar a 10 resultados
+                .collect(Collectors.toList());
     }
 
+    /**
+     * Elimina un usuario por su ID.
+     * 
+     * @param id ID del usuario a eliminar
+     * @throws RuntimeException Si el usuario no existe
+     */
     @Transactional
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException(AppConstants.ErrorMessages.USER_NOT_FOUND + id);
+        }
         userRepository.deleteById(id);
     }
 
+    /**
+     * Alterna el estado activo/inactivo de un usuario.
+     * 
+     * @param id ID del usuario
+     * @throws RuntimeException Si el usuario no existe
+     */
     @Transactional
     public void toggleUserStatus(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException(AppConstants.ErrorMessages.USER_NOT_FOUND + id));
+                
         user.setEnabled(!user.isEnabled());
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
+    }
+
+    // --- Métodos privados de utilidad ---
+
+    /**
+     * Determina si se está creando un nuevo usuario o actualizando uno existente.
+     */
+    private User determineUserToSave(UserRegistrationDto registrationDto) {
+        if (registrationDto.getId() != null) {
+            return userRepository.findById(registrationDto.getId())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado para edición con ID: " + registrationDto.getId()));
+        }
+        return new User();
+    }
+
+    /**
+     * Popula los datos básicos del usuario desde el DTO.
+     */
+    private void populateUserData(User user, UserRegistrationDto dto) {
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
+        user.setEnabled(dto.isEnabled());
+
+        // Establecer timestamp de actualización para usuarios existentes
+        if (user.getId() != null) {
+            user.setUpdatedAt(LocalDateTime.now());
+        }
+
+        // Manejar contraseña
+        handlePassword(user, dto);
+    }
+
+    /**
+     * Maneja la lógica de contraseñas para usuarios nuevos y existentes.
+     */
+    private void handlePassword(User user, UserRegistrationDto dto) {
+        if (StringUtils.hasText(dto.getPassword())) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        } else if (user.getId() == null) {
+            // Nuevos usuarios requieren contraseña
+            throw new RuntimeException(AppConstants.ErrorMessages.PASSWORD_REQUIRED_NEW_USER);
+        }
+        // Para usuarios existentes, si no hay contraseña nueva, se mantiene la actual
+    }
+
+    /**
+     * Asigna roles al usuario, usando un rol por defecto si no se especifican roles.
+     */
+    private void assignRoles(User user, List<String> selectedRoles) {
+        if (selectedRoles != null && !selectedRoles.isEmpty()) {
+            Set<Role> roles = selectedRoles.stream()
+                    .map(this::findRoleByNameOrThrow)
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
+        } else {
+            assignDefaultRole(user);
+        }
+    }
+
+    /**
+     * Busca un rol por nombre o lanza excepción si no existe.
+     */
+    private Role findRoleByNameOrThrow(String roleName) {
+        return roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException(AppConstants.ErrorMessages.ROLE_NOT_FOUND + roleName));
+    }
+
+    /**
+     * Asigna el rol por defecto (ROLE_CLIENT) al usuario.
+     */
+    private void assignDefaultRole(User user) {
+        Role defaultRole = roleRepository.findByName(Role.RoleName.ROLE_CLIENT.getFullName())
+                .orElseThrow(() -> new RuntimeException(AppConstants.ErrorMessages.DEFAULT_ROLE_NOT_FOUND));
+        user.setRoles(Collections.singleton(defaultRole));
     }
 }
