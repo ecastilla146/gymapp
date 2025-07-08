@@ -56,22 +56,22 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     /**
      * Obtiene las asistencias diarias para estadísticas.
      */
-    @Query("SELECT DATE(a.checkInTime) as date, COUNT(a) as count " +
-           "FROM Attendance a " +
-           "WHERE a.checkInTime BETWEEN :startDate AND :endDate " +
-           "GROUP BY DATE(a.checkInTime) " +
-           "ORDER BY date")
+    @Query(value = "SELECT DATE(check_in_time) as date, COUNT(*) as count " +
+           "FROM attendance " +
+           "WHERE check_in_time BETWEEN ?1 AND ?2 " +
+           "GROUP BY DATE(check_in_time) " +
+           "ORDER BY date", nativeQuery = true)
     List<Object[]> getDailyAttendanceStats(@Param("startDate") LocalDateTime startDate, 
                                          @Param("endDate") LocalDateTime endDate);
 
     /**
      * Obtiene las asistencias por hora para estadísticas.
      */
-    @Query("SELECT HOUR(a.checkInTime) as hour, COUNT(a) as count " +
-           "FROM Attendance a " +
-           "WHERE DATE(a.checkInTime) = DATE(:date) " +
-           "GROUP BY HOUR(a.checkInTime) " +
-           "ORDER BY hour")
+    @Query(value = "SELECT HOUR(check_in_time) as hour, COUNT(*) as count " +
+           "FROM attendance " +
+           "WHERE DATE(check_in_time) = DATE(?1) " +
+           "GROUP BY HOUR(check_in_time) " +
+           "ORDER BY hour", nativeQuery = true)
     List<Object[]> getHourlyAttendanceStats(@Param("date") LocalDateTime date);
 
     /**
@@ -87,10 +87,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     /**
      * Obtiene el promedio de duración de visitas en minutos.
      */
-    @Query("SELECT AVG(TIME_TO_SEC(TIMEDIFF(a.checkOutTime, a.checkInTime)) / 60) " +
-           "FROM Attendance a " +
-           "WHERE a.checkOutTime IS NOT NULL " +
-           "AND a.checkInTime BETWEEN :startDate AND :endDate")
+    @Query(value = "SELECT AVG(TIME_TO_SEC(TIMEDIFF(check_out_time, check_in_time)) / 60) " +
+           "FROM attendance " +
+           "WHERE check_out_time IS NOT NULL " +
+           "AND check_in_time BETWEEN ?1 AND ?2", nativeQuery = true)
     Double getAverageVisitDurationInMinutes(@Param("startDate") LocalDateTime startDate, 
                                           @Param("endDate") LocalDateTime endDate);
 

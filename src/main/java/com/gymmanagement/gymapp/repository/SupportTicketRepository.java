@@ -51,9 +51,9 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicket, Lo
     @Query("SELECT st.priority, COUNT(st) FROM SupportTicket st WHERE st.status IN ('OPEN', 'IN_PROGRESS') GROUP BY st.priority")
     List<Object[]> getOpenTicketCountByPriority();
 
-    @Query("SELECT AVG(TIME_TO_SEC(TIMEDIFF(st.resolvedAt, st.createdAt)) / 3600) " +
-           "FROM SupportTicket st WHERE st.resolvedAt IS NOT NULL " +
-           "AND st.createdAt BETWEEN :startDate AND :endDate")
+    @Query(value = "SELECT AVG(TIME_TO_SEC(TIMEDIFF(resolved_at, created_at)) / 3600) " +
+           "FROM support_tickets WHERE resolved_at IS NOT NULL " +
+           "AND created_at BETWEEN ?1 AND ?2", nativeQuery = true)
     Double getAverageResolutionTimeInHours(@Param("startDate") LocalDateTime startDate,
                                          @Param("endDate") LocalDateTime endDate);
 }

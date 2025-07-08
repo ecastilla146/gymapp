@@ -34,12 +34,12 @@ public interface FinancialTransactionRepository extends JpaRepository<FinancialT
                                               @Param("startDate") LocalDateTime startDate,
                                               @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT DATE(ft.transactionDate) as date, " +
-           "SUM(CASE WHEN ft.transactionType = 'INCOME' THEN ft.amount ELSE 0 END) as income, " +
-           "SUM(CASE WHEN ft.transactionType = 'EXPENSE' THEN ft.amount ELSE 0 END) as expenses " +
-           "FROM FinancialTransaction ft " +
-           "WHERE ft.status = 'COMPLETED' AND ft.transactionDate BETWEEN :startDate AND :endDate " +
-           "GROUP BY DATE(ft.transactionDate) ORDER BY date")
+    @Query(value = "SELECT DATE(transaction_date) as date, " +
+           "SUM(CASE WHEN transaction_type = 'INCOME' THEN amount ELSE 0 END) as income, " +
+           "SUM(CASE WHEN transaction_type = 'EXPENSE' THEN amount ELSE 0 END) as expenses " +
+           "FROM financial_transactions " +
+           "WHERE status = 'COMPLETED' AND transaction_date BETWEEN ?1 AND ?2 " +
+           "GROUP BY DATE(transaction_date) ORDER BY date", nativeQuery = true)
     List<Object[]> getDailyFinancialSummary(@Param("startDate") LocalDateTime startDate,
                                           @Param("endDate") LocalDateTime endDate);
 
