@@ -18,31 +18,52 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.gymmanagement.gymapp.config.AppConstants;
 import com.gymmanagement.gymapp.dto.UserRegistrationDto;
 import com.gymmanagement.gymapp.model.Role;
 import com.gymmanagement.gymapp.model.User;
 import com.gymmanagement.gymapp.repository.RoleRepository;
 import com.gymmanagement.gymapp.service.UserService;
+import com.gymmanagement.gymapp.validation.UserValidationService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-// ELIMINAR esta importación, ya que no se usa en variables locales
-// import org.springframework.lang.Nullable;
-
+/**
+ * Controlador para la gestión de usuarios en el panel de administración.
+ * Maneja las operaciones CRUD de usuarios incluyendo paginación, búsqueda y gestión de roles.
+ * 
+ * @author Gym Management System
+ * @version 1.0
+ */
 @Controller
 @RequestMapping("/admin/users")
 public class UserController {
 
+    // Se usan las constantes centralizadas de AppConstants
+    
     private final UserService userService;
     private final RoleRepository roleRepository;
+    private final UserValidationService userValidationService;
 
     @Autowired
-    public UserController(UserService userService, RoleRepository roleRepository) {
+    public UserController(UserService userService, RoleRepository roleRepository, UserValidationService userValidationService) {
         this.userService = userService;
         this.roleRepository = roleRepository;
+        this.userValidationService = userValidationService;
     }
 
+    /**
+     * Muestra la lista paginada de usuarios con funcionalidad de búsqueda y ordenamiento.
+     * 
+     * @param model Modelo de la vista
+     * @param page Número de página (por defecto 1)
+     * @param size Tamaño de página (por defecto 10)
+     * @param sort Campo y dirección de ordenamiento (por defecto "id,asc")
+     * @param keyword Término de búsqueda opcional
+     * @param request Objeto de solicitud HTTP para obtener la URI actual
+     * @return Vista de lista de usuarios
+     */
     @GetMapping
     public String listUsers(
             Model model,
@@ -50,43 +71,28 @@ public class UserController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id,asc") String sort,
             @RequestParam(required = false) String keyword,
-            HttpServletRequest request
-    ) {
-        String[] sortParams = sort.split(",");
-        String sortBy = sortParams[0];
-        Sort.Direction sortDirection = Sort.Direction.fromString(sortParams[1].toUpperCase());
+            HttpServletRequest request) {
 
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(sortDirection, sortBy));
-
-        Page<User> userPage;
-        if (keyword != null && !keyword.isEmpty()) {
-            userPage = userService.searchUsers(keyword, pageable);
-        } else {
-            userPage = userService.findAllUsers(pageable);
-        }
-
-        model.addAttribute("users", userPage.getContent());
-        model.addAttribute("currentPage", userPage.getNumber() + 1);
-        model.addAttribute("totalPages", userPage.getTotalPages());
-        model.addAttribute("totalItems", userPage.getTotalElements());
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortField", sortBy);
-        model.addAttribute("sortDirection", sortDirection.toString().toLowerCase());
-        model.addAttribute("keyword", keyword);
-        model.addAttribute("currentUri", request.getRequestURI());
-
-        return "admin/users/list";
+        Pageable pageable = createPageable(page, size, sort);
+        Page<User> userPage = searchUsers(keyword, pageable);
+        
+        populateListModel(model, userPage, size, sort, keyword, request);
+        
+        return AppConstants.Views.ADMIN_USERS_LIST;
     }
 
+    /**
+     * Muestra el formulario para crear un nuevo usuario.
+     */
     @GetMapping("/new")
     public String createUserForm(Model model, HttpServletRequest request) {
-        model.addAttribute("userDto", new UserRegistrationDto());
-        model.addAttribute("allRoles", roleRepository.findAll());
-        model.addAttribute("isEdit", false);
-        model.addAttribute("currentUri", request.getRequestURI());
-        return "admin/users/form";
+        populateFormModel(model, new UserRegistrationDto(), false, request);
+        return AppConstants.Views.ADMIN_USERS_FORM;
     }
 
+    /**
+     * Procesa la creación de un nuevo usuario.
+     */
     @PostMapping("/new")
     public String saveUser(@Valid @ModelAttribute("userDto") UserRegistrationDto userDto,
                            BindingResult result,
@@ -94,68 +100,41 @@ public class UserController {
                            Model model,
                            HttpServletRequest request) {
 
-        // Validaciones personalizadas de unicidad
-        // ANTERIORMENTE: @Nullable String username = userDto.getUsername();
-        String username = userDto.getUsername(); // Sin @Nullable aquí
-        // ANTERIORMENTE: @Nullable String email = userDto.getEmail();
-        String email = userDto.getEmail(); // Sin @Nullable aquí
-
-        if (username != null && !username.isEmpty() && userService.findByUsername(username).isPresent()) { // Añadido !username.isEmpty() para seguridad
-            result.rejectValue("username", null, "El nombre de usuario ya está registrado.");
-        }
-        if (email != null && !email.isEmpty() && userService.findByEmail(email).isPresent()) { // Añadido !email.isEmpty() para seguridad
-            result.rejectValue("email", null, "El email ya está registrado.");
-        }
-        
-        // Validación de contraseñas si aplica para la creación
-        if (userDto.getPassword() == null || userDto.getPassword().isEmpty()) {
-            result.rejectValue("password", null, "La contraseña es obligatoria para nuevos usuarios.");
-        } else if (!userDto.getPassword().equals(userDto.getConfirmPassword())) {
-            result.rejectValue("confirmPassword", null, "Las contraseñas no coinciden.");
-        }
-
+        // Validaciones personalizadas para creación
+        userValidationService.validateNewUser(userDto, result);
 
         if (result.hasErrors()) {
-            model.addAttribute("allRoles", roleRepository.findAll());
-            model.addAttribute("isEdit", false);
-            model.addAttribute("currentUri", request.getRequestURI());
-            return "admin/users/form";
+            populateFormModel(model, userDto, false, request);
+            return AppConstants.Views.ADMIN_USERS_FORM;
         }
 
         try {
             userService.saveUser(userDto);
-            redirectAttributes.addFlashAttribute("successMessage", "Usuario guardado exitosamente!");
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.SUCCESS_MESSAGE, AppConstants.SuccessMessages.USER_CREATED);
         } catch (RuntimeException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            model.addAttribute("allRoles", roleRepository.findAll());
-            model.addAttribute("isEdit", false);
-            model.addAttribute("currentUri", request.getRequestURI());
-            return "admin/users/form";
+            model.addAttribute(AppConstants.ModelAttributes.ERROR_MESSAGE, e.getMessage());
+            populateFormModel(model, userDto, false, request);
+            return AppConstants.Views.ADMIN_USERS_FORM;
         }
-        return "redirect:/admin/users";
+        
+        return AppConstants.Redirects.ADMIN_USERS;
     }
 
+    /**
+     * Muestra el formulario para editar un usuario existente.
+     */
     @GetMapping("/edit/{id}")
     public String editUserForm(@PathVariable Long id, Model model, HttpServletRequest request) {
-        User user = userService.findUserById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
-
-        UserRegistrationDto userDto = new UserRegistrationDto();
-        userDto.setId(user.getId());
-        userDto.setUsername(user.getUsername());
-        userDto.setEmail(user.getEmail());
-        userDto.setFirstName(user.getFirstName());
-        userDto.setLastName(user.getLastName());
-        userDto.setEnabled(user.isEnabled());
-        userDto.setSelectedRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toList()));
-
-        model.addAttribute("userDto", userDto);
-        model.addAttribute("allRoles", roleRepository.findAll());
-        model.addAttribute("isEdit", true);
-        model.addAttribute("currentUri", request.getRequestURI());
-        return "admin/users/form";
+        User user = findUserOrThrow(id);
+        UserRegistrationDto userDto = createUserDtoFromUser(user);
+        
+        populateFormModel(model, userDto, true, request);
+        return AppConstants.Views.ADMIN_USERS_FORM;
     }
 
+    /**
+     * Procesa la actualización de un usuario existente.
+     */
     @PostMapping("/edit/{id}")
     public String updateUser(@PathVariable Long id,
                              @Valid @ModelAttribute("userDto") UserRegistrationDto userDto,
@@ -163,77 +142,130 @@ public class UserController {
                              RedirectAttributes redirectAttributes,
                              Model model,
                              HttpServletRequest request) {
-        userDto.setId(id);
-
-        // Validaciones personalizadas de unicidad para edición
-        // ANTERIORMENTE: @Nullable String username = userDto.getUsername();
-        String username = userDto.getUsername(); // Sin @Nullable aquí
-        // ANTERIORMENTE: @Nullable String email = userDto.getEmail();
-        String email = userDto.getEmail(); // Sin @Nullable aquí
-
-        if (email != null && !email.isEmpty() && !result.hasFieldErrors("email")) {
-            userService.findByEmail(email).ifPresent(existingUser -> {
-                if (!existingUser.getId().equals(id)) {
-                    result.rejectValue("email", null, "El email ya está en uso por otro usuario.");
-                }
-            });
-        }
-        if (username != null && !username.isEmpty() && !result.hasFieldErrors("username")) {
-            userService.findByUsername(username).ifPresent(existingUser -> {
-                if (!existingUser.getId().equals(id)) {
-                    result.rejectValue("username", null, "El nombre de usuario ya está en uso por otro usuario.");
-                }
-            });
-        }
         
-        // Validación de contraseñas para actualización (opcional)
-        // Solo si se proporciona una nueva contraseña, verificar que coincida
-        if (userDto.getPassword() != null && !userDto.getPassword().isEmpty()) {
-            if (!userDto.getPassword().equals(userDto.getConfirmPassword())) {
-                result.rejectValue("confirmPassword", null, "Las contraseñas no coinciden.");
-            }
-        }
-
+        userDto.setId(id);
+        
+        // Validaciones personalizadas para actualización
+        userValidationService.validateExistingUser(userDto, result);
 
         if (result.hasErrors()) {
-            model.addAttribute("allRoles", roleRepository.findAll());
-            model.addAttribute("isEdit", true);
-            model.addAttribute("currentUri", request.getRequestURI());
-            return "admin/users/form";
+            populateFormModel(model, userDto, true, request);
+            return AppConstants.Views.ADMIN_USERS_FORM;
         }
 
         try {
             userService.saveUser(userDto);
-            redirectAttributes.addFlashAttribute("successMessage", "Usuario actualizado exitosamente!");
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.SUCCESS_MESSAGE, AppConstants.SuccessMessages.USER_UPDATED);
         } catch (RuntimeException e) {
-            model.addAttribute("errorMessage", e.getMessage());
-            model.addAttribute("allRoles", roleRepository.findAll());
-            model.addAttribute("isEdit", true);
-            model.addAttribute("currentUri", request.getRequestURI());
-            return "admin/users/form";
+            model.addAttribute(AppConstants.ModelAttributes.ERROR_MESSAGE, e.getMessage());
+            populateFormModel(model, userDto, true, request);
+            return AppConstants.Views.ADMIN_USERS_FORM;
         }
-        return "redirect:/admin/users";
+        
+        return AppConstants.Redirects.ADMIN_USERS;
     }
 
+    /**
+     * Elimina un usuario por su ID.
+     */
     @GetMapping("/delete/{id}")
     public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             userService.deleteUser(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Usuario eliminado exitosamente!");
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.SUCCESS_MESSAGE, AppConstants.SuccessMessages.USER_DELETED);
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al eliminar usuario: " + e.getMessage());
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.ERROR_MESSAGE, "Error al eliminar usuario: " + e.getMessage());
         }
-        return "redirect:/admin/users";
+        return AppConstants.Redirects.ADMIN_USERS;
     }
 
+    /**
+     * Alterna el estado activo/inactivo de un usuario.
+     */
     @GetMapping("/toggle-status/{id}")
     public String toggleUserStatus(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
             userService.toggleUserStatus(id);
-            redirectAttributes.addFlashAttribute("successMessage", "Estado del usuario actualizado!");
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.SUCCESS_MESSAGE, AppConstants.SuccessMessages.USER_STATUS_UPDATED);
         } catch (RuntimeException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error al cambiar estado: " + e.getMessage());
+            redirectAttributes.addFlashAttribute(AppConstants.ModelAttributes.ERROR_MESSAGE, "Error al cambiar estado: " + e.getMessage());
         }
-        return "redirect:/admin/users";
+        return AppConstants.Redirects.ADMIN_USERS;
+    }
+
+    // --- Métodos privados de utilidad ---
+
+    /**
+     * Crea un objeto Pageable basado en los parámetros de paginación y ordenamiento.
+     */
+    private Pageable createPageable(int page, int size, String sort) {
+        String[] sortParams = sort.split(",");
+        String sortBy = sortParams[0];
+        Sort.Direction sortDirection = Sort.Direction.fromString(sortParams[1].toUpperCase());
+        
+        return PageRequest.of(page - 1, size, Sort.by(sortDirection, sortBy));
+    }
+
+    /**
+     * Busca usuarios aplicando filtros de búsqueda si se proporciona una palabra clave.
+     */
+    private Page<User> searchUsers(String keyword, Pageable pageable) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            return userService.searchUsers(keyword.trim(), pageable);
+        }
+        return userService.findAllUsers(pageable);
+    }
+
+    /**
+     * Popula el modelo para la vista de lista de usuarios.
+     */
+    private void populateListModel(Model model, Page<User> userPage, int size, String sort, String keyword, HttpServletRequest request) {
+        String[] sortParams = sort.split(",");
+        
+        model.addAttribute(AppConstants.ModelAttributes.USERS, userPage.getContent());
+        model.addAttribute(AppConstants.ModelAttributes.CURRENT_PAGE, userPage.getNumber() + 1);
+        model.addAttribute(AppConstants.ModelAttributes.TOTAL_PAGES, userPage.getTotalPages());
+        model.addAttribute(AppConstants.ModelAttributes.TOTAL_ITEMS, userPage.getTotalElements());
+        model.addAttribute(AppConstants.ModelAttributes.PAGE_SIZE, size);
+        model.addAttribute(AppConstants.ModelAttributes.SORT_FIELD, sortParams[0]);
+        model.addAttribute(AppConstants.ModelAttributes.SORT_DIRECTION, sortParams[1].toLowerCase());
+        model.addAttribute(AppConstants.ModelAttributes.KEYWORD, keyword);
+        model.addAttribute(AppConstants.ModelAttributes.CURRENT_URI, request.getRequestURI());
+    }
+
+    /**
+     * Popula el modelo para la vista de formulario de usuario.
+     */
+    private void populateFormModel(Model model, UserRegistrationDto userDto, boolean isEdit, HttpServletRequest request) {
+        model.addAttribute(AppConstants.ModelAttributes.USER_DTO, userDto);
+        model.addAttribute(AppConstants.ModelAttributes.ALL_ROLES, roleRepository.findAll());
+        model.addAttribute(AppConstants.ModelAttributes.IS_EDIT, isEdit);
+        model.addAttribute(AppConstants.ModelAttributes.CURRENT_URI, request.getRequestURI());
+    }
+
+    /**
+     * Busca un usuario por ID o lanza una excepción si no se encuentra.
+     */
+    private User findUserOrThrow(Long id) {
+        return userService.findUserById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+    }
+
+    /**
+     * Crea un DTO de usuario a partir de una entidad User.
+     */
+    private UserRegistrationDto createUserDtoFromUser(User user) {
+        UserRegistrationDto userDto = new UserRegistrationDto();
+        userDto.setId(user.getId());
+        userDto.setUsername(user.getUsername());
+        userDto.setEmail(user.getEmail());
+        userDto.setFirstName(user.getFirstName());
+        userDto.setLastName(user.getLastName());
+        userDto.setEnabled(user.isEnabled());
+        userDto.setSelectedRoles(user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList()));
+        
+        return userDto;
     }
 }
