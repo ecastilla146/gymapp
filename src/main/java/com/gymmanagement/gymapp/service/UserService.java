@@ -39,19 +39,21 @@ public class UserService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        if (!StringUtils.hasText(email)) {
-            throw new UsernameNotFoundException("El email no puede ser nulo o vacío.");
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        if (!StringUtils.hasText(username)) {
+            throw new UsernameNotFoundException("El username no puede ser nulo o vacío.");
         }
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con username: " + username));
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getUsername(),
                 user.getPassword(),
                 user.isEnabled(),
                 true, true, true,
-                user.getRoles()
+                user.getRoles().stream()
+                        .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority(role.getName()))
+                        .collect(Collectors.toList())
         );
     }
 
@@ -119,12 +121,20 @@ public class UserService implements UserDetailsService {
         return userRepository.findAll();
     }
 
+    public List<User> findActiveUsers() {
+        return userRepository.findByEnabledTrue();
+    }
+
     public Page<User> searchUsers(String keyword, Pageable pageable) {
         String actualKeyword = keyword != null ? keyword : "";
         return userRepository.searchUsers(actualKeyword, pageable);
     }
 
     public Optional<User> findUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
 

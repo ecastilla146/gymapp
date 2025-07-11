@@ -43,7 +43,6 @@ public class Attendance {
         updatedAt = LocalDateTime.now();
     }
 
-    @PrePersist
     @jakarta.persistence.PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

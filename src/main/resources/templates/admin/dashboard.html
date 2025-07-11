@@ -144,23 +144,23 @@
                     <div class="stats-grid">
                         <div class="stat-card">
                             <i class="fas fa-users-line stat-icon"></i>
-                            <span class="stat-value">520</span>
-                            <span class="stat-label">Socios Activos</span>
+                            <span class="stat-value" th:text="${activeMemberships}">0</span>
+                            <span class="stat-label">Membresías Activas</span>
                         </div>
                         <div class="stat-card">
                             <i class="fas fa-dollar-sign stat-icon"></i>
-                            <span class="stat-value">$15,000</span>
-                            <span class="stat-label">Ingresos Mensuales</span>
+                            <span class="stat-value" th:text="'$' + ${#numbers.formatDecimal(monthlyRevenue, 0, 'COMMA', 0, 'POINT')}">$0</span>
+                            <span class="stat-label">Ingresos Totales</span>
                         </div>
                         <div class="stat-card">
                             <i class="fas fa-person-walking stat-icon"></i>
-                            <span class="stat-value">120 / Día</span>
-                            <span class="stat-label">Asistencias Promedio</span>
+                            <span class="stat-value" th:text="${todayAttendance + ' / Día'}">0 / Día</span>
+                            <span class="stat-label">Asistencias Hoy</span>
                         </div>
                         <div class="stat-card">
-                            <i class="fas fa-calendar-check stat-icon"></i>
-                            <span class="stat-value">Yoga</span>
-                            <span class="stat-label">Clase Más Popular</span>
+                            <i class="fas fa-user-clock stat-icon"></i>
+                            <span class="stat-value" th:text="${activeSessions}">0</span>
+                            <span class="stat-label">Sesiones Activas</span>
                         </div>
                     </div>
 
@@ -177,11 +177,17 @@
 
                     <div class="recent-activity">
                         <h4>Actividad Reciente</h4>
-                        <ul>
-                            <li><i class="fas fa-user-plus"></i> Nuevo cliente registrado: Juan Pérez.</li>
-                            <li><i class="fas fa-credit-card"></i> Pago de membresía recibido: María García (Anual).</li>
-                            <li><i class="fas fa-dumbbell"></i> Clase de Crossfit programada para el 15/06.</li>
-                            <li><i class="fas fa-box"></i> Stock bajo de proteína Whey.</li>
+                        <div th:if="${#lists.isEmpty(recentMemberships)}" style="text-align: center; padding: 20px; color: #666;">
+                            <i class="fas fa-info-circle" style="font-size: 2em; margin-bottom: 10px; color: #ddd;"></i>
+                            <p>No hay actividad reciente.</p>
+                        </div>
+                        <ul th:if="${!#lists.isEmpty(recentMemberships)}">
+                            <li th:each="membership : ${recentMemberships}">
+                                <i class="fas fa-credit-card"></i> 
+                                Membresía: <strong th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Usuario</strong> 
+                                (<span th:text="${membership.membershipPlan.name}">Plan</span>) - 
+                                <span th:text="${#dates.format(membership.createdAt, 'dd/MM/yyyy')}">Fecha</span>
+                            </li>
                         </ul>
                     </div>
                 </section>
