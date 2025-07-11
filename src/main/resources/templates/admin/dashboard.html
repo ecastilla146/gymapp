@@ -184,9 +184,9 @@
                         <ul th:if="${!#lists.isEmpty(recentMemberships)}">
                             <li th:each="membership : ${recentMemberships}">
                                 <i class="fas fa-credit-card"></i> 
-                                Membresía: <strong th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Usuario</strong> 
-                                (<span th:text="${membership.membershipPlan.name}">Plan</span>) - 
-                                <span th:text="${#dates.format(membership.createdAt, 'dd/MM/yyyy')}">Fecha</span>
+                                Membresía: <strong th:text="${membership.user != null ? membership.user.firstName + ' ' + membership.user.lastName : 'Usuario'}">Usuario</strong> 
+                                (<span th:text="${membership.membershipPlan != null ? membership.membershipPlan.name : 'Plan'}">Plan</span>) - 
+                                <span th:text="${membership.createdAt != null ? #dates.format(membership.createdAt, 'dd/MM/yyyy') : ''}">Fecha</span>
                             </li>
                         </ul>
                     </div>
