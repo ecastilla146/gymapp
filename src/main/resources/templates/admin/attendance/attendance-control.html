@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Asistencia</title>
+    <link rel="stylesheet" th:href="@{/css/attendance.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<section th:fragment="content" class="dashboard-section">
+    <h3><i class="fas fa-user-check"></i> Control de Asistencia</h3>
+
+    <!-- Mensajes de feedback -->
+    <div th:if="${successMessage}" class="alert success">
+        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+    </div>
+    <div th:if="${errorMessage}" class="alert error">
+        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+    </div>
+
+    <!-- Panel de control principal -->
+    <div class="attendance-controls">
+        <div class="control-card">
+            <div class="card-header">
+                <i class="fas fa-sign-in-alt"></i>
+                <h4>Registrar Entrada</h4>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/admin/attendance/check-in}" method="post" class="attendance-form">
+                    <div class="form-group">
+                        <label for="checkin-membership">ID o Código de Membresía:</label>
+                        <input type="text" id="checkin-membership" name="membershipId" required 
+                               placeholder="Ingrese ID o escanee código" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-sign-in-alt"></i> Registrar Entrada
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="control-card">
+            <div class="card-header">
+                <i class="fas fa-sign-out-alt"></i>
+                <h4>Registrar Salida</h4>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/admin/attendance/check-out}" method="post" class="attendance-form">
+                    <div class="form-group">
+                        <label for="checkout-membership">ID o Código de Membresía:</label>
+                        <input type="text" id="checkout-membership" name="membershipId" required 
+                               placeholder="Ingrese ID o escanee código" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-sign-out-alt"></i> Registrar Salida
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="attendance-stats">
+        <div class="stat-box">
+            <i class="fas fa-users"></i>
+            <div class="stat-info">
+                <span class="stat-number">24</span>
+                <span class="stat-label">Miembros Activos Hoy</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <i class="fas fa-clock"></i>
+            <div class="stat-info">
+                <span class="stat-number">18</span>
+                <span class="stat-label">Entradas Hoy</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <i class="fas fa-chart-line"></i>
+            <div class="stat-info">
+                <span class="stat-number">85%</span>
+                <span class="stat-label">Ocupación Promedio</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enlaces de acciones adicionales -->
+    <div class="additional-actions">
+        <a th:href="@{/admin/attendance/history}" class="btn btn-info">
+            <i class="fas fa-history"></i> Ver Historial
+        </a>
+        <a href="#" class="btn btn-secondary" onclick="alert('Funcionalidad en desarrollo');">
+            <i class="fas fa-download"></i> Exportar Datos
+        </a>
+        <a href="#" class="btn btn-primary" onclick="alert('Funcionalidad en desarrollo');">
+            <i class="fas fa-qrcode"></i> Escáner QR
+        </a>
+    </div>
+
+    <!-- Lista de miembros actualmente en el gimnasio -->
+    <div class="current-members">
+        <h4><i class="fas fa-user-friends"></i> Miembros Actualmente en el Gimnasio</h4>
+        <div class="members-grid">
+            <!-- Aquí se mostrarían los miembros que están actualmente en el gimnasio -->
+            <div class="member-card">
+                <i class="fas fa-user-circle member-avatar"></i>
+                <div class="member-info">
+                    <span class="member-name">Juan Pérez</span>
+                    <span class="entry-time">Entrada: 08:30 AM</span>
+                </div>
+            </div>
+            <div class="member-card">
+                <i class="fas fa-user-circle member-avatar"></i>
+                <div class="member-info">
+                    <span class="member-name">María García</span>
+                    <span class="entry-time">Entrada: 09:15 AM</span>
+                </div>
+            </div>
+            <div class="member-card">
+                <i class="fas fa-user-circle member-avatar"></i>
+                <div class="member-info">
+                    <span class="member-name">Carlos López</span>
+                    <span class="entry-time">Entrada: 10:00 AM</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</body>
+</html>

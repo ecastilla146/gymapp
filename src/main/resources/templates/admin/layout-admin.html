@@ -5,6 +5,9 @@
     <title th:text="${pageTitle}">Kronos Gym</title>
     <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
     <link rel="stylesheet" th:href="@{/css/memberships.css}">
+    <link rel="stylesheet" th:href="@{/css/attendance.css}">
+    <link rel="stylesheet" th:href="@{/css/tables.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 <div class="dashboard-wrapper">
@@ -19,8 +22,10 @@
         </div>
         <nav class="sidebar-nav">
             <ul>
-                <li><a th:href="@{/admin/dashboard}"><i class="fas fa-tachometer-alt icon"></i><span>Dashboard</span></a></li>
-                <li><a th:href="@{/admin/memberships}"><i class="fas fa-credit-card icon"></i><span>Gestión de Membresías</span></a></li>
+                <li><a th:href="@{/admin/dashboard}"><i class="fas fa-tachometer-alt icon"></i><span class="text">Dashboard</span></a></li>
+                <li><a th:href="@{/admin/memberships}"><i class="fas fa-credit-card icon"></i><span class="text">Gestión de Membresías</span></a></li>
+                <li><a th:href="@{/admin/attendance}"><i class="fas fa-user-check icon"></i><span class="text">Control de Asistencia</span></a></li>
+                <li><a th:href="@{/admin/users}"><i class="fas fa-users icon"></i><span class="text">Gestión de Usuarios</span></a></li>
                 <!-- Agrega aquí los demás enlaces -->
             </ul>
         </nav>
@@ -37,5 +42,36 @@
         <main th:replace="${contentFragment} :: content"></main>
     </div>
 </div>
+
+<script>
+// Funcionalidad para el sidebar colapsable
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    if (sidebarToggle && sidebar && mainContent) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('shifted');
+        });
+    }
+
+    // Auto-colapsar en pantallas pequeñas
+    function checkScreenSize() {
+        if (window.innerWidth <= 768) {
+            sidebar.classList.add('collapsed');
+            mainContent.classList.add('shifted');
+        } else {
+            sidebar.classList.remove('collapsed');
+            mainContent.classList.remove('shifted');
+        }
+    }
+
+    // Verificar al cargar y redimensionar
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+});
+</script>
 </body>
 </html>
