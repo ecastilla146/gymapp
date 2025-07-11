@@ -16,9 +16,4 @@ public class AuthController {
     public String logout() {
         return "redirect:/login";
     }
-
-    @GetMapping("/")
-    public String home() {
-        return "redirect:/admin/dashboard";
-    }
 }
