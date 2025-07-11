@@ -11,8 +11,4 @@ public class LoginController {
         return "landing"; // Esto carga landing.html desde templates
     }
 
-    @GetMapping("/login")
-    public String mostrarLogin() {
-        return "login"; // Esto carga login.html desde templates
-    }
 }
