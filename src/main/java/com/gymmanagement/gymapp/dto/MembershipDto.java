@@ -3,47 +3,35 @@ package com.gymmanagement.gymapp.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
 import com.gymmanagement.gymapp.model.MembershipStatus;
 import com.gymmanagement.gymapp.model.PaymentMethod;
 
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.FutureOrPresent;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-
 public class MembershipDto {
-
-    private Long id; // Para edición
-
-    @NotNull(message = "El usuario no puede estar vacío.")
-    private Long userId; // ID del usuario, no el objeto completo para el DTO
-
-    @NotNull(message = "El plan de membresía no puede estar vacío.")
-    private Long membershipPlanId; // ID del plan, no el objeto completo para el DTO
-
-    @NotNull(message = "La fecha de inicio no puede estar vacía.")
-    @PastOrPresent(message = "La fecha de inicio no puede ser futura.")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    
+    private Long id;
+    private Long userId;
+    private Long membershipPlanId;
     private LocalDate startDate;
-
-    @NotNull(message = "La fecha de vencimiento no puede estar vacía.")
-    @FutureOrPresent(message = "La fecha de vencimiento no puede ser pasada.")
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
-
-    @NotNull(message = "El monto no puede estar vacío.")
-    @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0.")
     private BigDecimal amount;
-
-    @NotNull(message = "El estado no puede estar vacío.")
     private MembershipStatus status;
-
-    @NotNull(message = "El método de pago no puede estar vacío.")
     private PaymentMethod paymentMethod;
 
-    // Getters y Setters
+    // Constructors
+    public MembershipDto() {}
+
+    public MembershipDto(Long userId, Long membershipPlanId, LocalDate startDate, LocalDate endDate, 
+                       BigDecimal amount, MembershipStatus status, PaymentMethod paymentMethod) {
+        this.userId = userId;
+        this.membershipPlanId = membershipPlanId;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.amount = amount;
+        this.status = status;
+        this.paymentMethod = paymentMethod;
+    }
+
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -111,14 +99,14 @@ public class MembershipDto {
     @Override
     public String toString() {
         return "MembershipDto{" +
-               "id=" + id +
-               ", userId=" + userId +
-               ", membershipPlanId=" + membershipPlanId +
-               ", startDate=" + startDate +
-               ", endDate=" + endDate +
-               ", amount=" + amount +
-               ", status=" + status +
-               ", paymentMethod=" + paymentMethod +
-               '}';
+                "id=" + id +
+                ", userId=" + userId +
+                ", membershipPlanId=" + membershipPlanId +
+                ", startDate=" + startDate +
+                ", endDate=" + endDate +
+                ", amount=" + amount +
+                ", status=" + status +
+                ", paymentMethod=" + paymentMethod +
+                '}';
     }
 }

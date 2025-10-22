@@ -1,83 +1,395 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Membresías</title>
-    <!-- Enlace al CSS que pusiste en static -->
-    <link rel="stylesheet" th:href="@{/css/memberships.css}">
-    <!-- Iconos Font Awesome si los usas -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${#strings.defaultString(pageTitle, 'Kronos Gym - Gestión de Membresías')}">Kronos Gym - Gestión de Membresías</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <th:block th:if="${pageCss}">
+        <link rel="stylesheet" th:href="${pageCss}">
+    </th:block>
+
+    <style>
+        .memberships-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .page-title {
+            color: #333;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .memberships-table {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-ACTIVE {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-EXPIRED {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-PENDING_PAYMENT {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-CANCELLED {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons .btn {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
+<div class="dashboard-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img th:src="@{/img/logo-white.png}" alt="Kronos Logo" class="sidebar-logo">
+            <h3 class="app-title">Admin</h3>
+            <button class="toggle-sidebar-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/dashboard') ? 'active' : ''}">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt icon"></i>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/users') ? 'active' : ''}">
+                    <a href="/admin/users" class="nav-link">
+                        <i class="fas fa-users icon"></i>
+                        <span class="text">Gestión de Usuarios</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/memberships') ? 'active' : ''}">
+                    <a href="/admin/memberships" class="nav-link">
+                        <i class="fas fa-credit-card icon"></i>
+                        <span class="text">Gestión de Membresías</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/attendance') ? 'active' : ''}">
+                    <a href="/admin/attendance" class="nav-link">
+                        <i class="fas fa-clipboard-check icon"></i>
+                        <span class="text">Control de Asistencia</span>
+                    </a>
+                </li>
+                <li class="nav-item logout">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt icon"></i>
+                        <span class="text">Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
 
-<section th:fragment="content" class="dashboard-section">
-    <h3><i class="fas fa-credit-card"></i> Gestión de Membresías</h3>
+    <div class="main-content" id="mainContent">
+        <header class="navbar">
+            <div class="navbar-left">
+                <h2 th:text="${#strings.defaultString(navbarTitle, 'Gestión de Membresías')}">Gestión de Membresías</h2>
+            </div>
+            <div class="navbar-right">
+                <span class="user-info" sec:authorize="isAuthenticated()">
+                    <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+                </span>
+            </div>
+        </header>
 
-    <a th:href="@{/admin/memberships/new}" class="btn-primary">
-        <i class="fas fa-plus-circle"></i> Nueva Membresía
-    </a>
+        <div class="memberships-container">
+            <!-- Alertas -->
+            <div th:if="${success}" class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${success}"></span>
+            </div>
+            <div th:if="${error}" class="alert error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${error}"></span>
+            </div>
 
-    <div th:if="${successMessage}" class="alert success">
-        <i class="fas fa-check-circle"></i> <span th:text="${successMessage}"></span>
+            <!-- Header de la página -->
+            <div class="page-header">
+                <h3 class="page-title">
+                    <i class="fas fa-credit-card"></i> Gestión de Membresías
+                </h3>
+                <a th:href="@{/admin/memberships/new}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Nueva Membresía
+                </a>
+            </div>
+
+            <!-- Tabla de membresías -->
+            <div class="memberships-table">
+                <div th:if="${#lists.isEmpty(memberships)}" class="empty-state">
+                    <i class="fas fa-credit-card"></i>
+                    <h3>No hay membresías registradas</h3>
+                    <p>Comienza creando una nueva membresía para un usuario.</p>
+                    <a th:href="@{/admin/memberships/new}" class="btn btn-primary" style="margin-top: 20px;">
+                        <i class="fas fa-plus-circle"></i> Crear Primera Membresía
+                    </a>
+                </div>
+
+                <table th:if="${!#lists.isEmpty(memberships)}" class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Plan</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Vencimiento</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Método de Pago</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="membership : ${memberships}">
+                            <td th:text="${membership.id}">1</td>
+                            <td>
+                                <strong th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Juan Pérez</strong>
+                                <br>
+                                <small th:text="${membership.user.username}">username</small>
+                            </td>
+                            <td th:text="${membership.membershipPlan.name}">Mensual</td>
+                            <td th:text="${#temporals.format(membership.startDate, 'dd/MM/yyyy')}">01/01/2024</td>
+                            <td th:text="${#temporals.format(membership.endDate, 'dd/MM/yyyy')}">01/02/2024</td>
+                            <td th:text="'$' + ${#numbers.formatDecimal(membership.amount, 0, 'COMMA', 2, 'POINT')}">$30.00</td>
+                            <td>
+                                <span class="status-badge" th:classappend="'status-' + ${membership.status}" 
+                                      th:text="${membership.status}">ACTIVE</span>
+                            </td>
+                            <td th:text="${membership.paymentMethod}">Tarjeta</td>
+                            <td class="action-buttons">
+                                <a th:href="@{/admin/memberships/details(id=${membership.id})}" class="btn btn-info" title="Ver Detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <form th:action="@{/admin/memberships/renew}" method="post" style="display:inline;">
+                                    <input type="hidden" name="membershipId" th:value="${membership.id}">
+                                    <button type="submit" class="btn btn-success" title="Renovar" 
+                                            th:if="${membership.status.name() == 'ACTIVE' || membership.status.name() == 'EXPIRED'}">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </form>
+                                                                 <a href="#" class="btn btn-warning" title="Generar Recibo" 
+                                    th:onclick="'generateReceipt(' + ${membership.id} + ', \'' + '${membership.user.firstName} ${membership.user.lastName}' + '\', ' + ${membership.amount} + ');'">
+                                    <i class="fas fa-receipt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <div th:if="${errorMessage}" class="alert error">
-        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
-    </div>
+</div>
 
-    <div class="table-responsive">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Usuario</th>
-                    <th>Plan</th>
-                    <th>Fecha Inicio</th>
-                    <th>Fecha Vencimiento</th>
-                    <th>Monto</th>
-                    <th>Estado</th>
-                    <th>Método de Pago</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="membership : ${memberships}">
-                    <td th:text="${membership.id}">1</td>
-                    <td th:text="${membership.user.firstName + ' ' + membership.user.lastName}">Juan Pérez</td>
-                    <td th:text="${membership.membershipPlan.name}">Mensual</td>
-                    <td th:text="${#temporals.format(membership.startDate, 'dd-MM-yyyy')}">01-01-2024</td>
-                    <td th:text="${#temporals.format(membership.endDate, 'dd-MM-yyyy')}">01-02-2024</td>
-                    <td th:text="${#numbers.formatCurrency(membership.amount)}">$30.00</td>
-                    <td>
-                        <span class="membership-status-label" th:classappend="'enabled-' + ${membership.status}" th:text="${membership.status}"></span>
-                    </td>
-                    <td th:text="${membership.paymentMethod}">Tarjeta</td>
-                    <td class="action-buttons">
-                        <a th:href="@{/admin/memberships/edit/{id}(id=${membership.id})}" class="btn-edit" title="Editar">
-                            <i class="fas fa-edit"></i> <span class="action-text">Editar</span>
-                        </a>
-                        <a th:href="@{/admin/memberships/details/{id}(id=${membership.id})}" class="btn-details" title="Ver Detalles">
-                            <i class="fas fa-eye"></i> <span class="action-text">Ver</span>
-                        </a>
-                        <form th:action="@{/admin/memberships/delete/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres eliminar esta membresía?');" style="display:inline;">
-                            <button type="submit" class="btn-delete" title="Eliminar"><i class="fas fa-trash-alt"></i> <span class="action-text">Eliminar</span></button>
-                        </form>
-                        <form th:action="@{/admin/memberships/renew/{id}(id=${membership.id})}" method="post" onsubmit="return confirm('¿Estás seguro de que quieres renovar esta membresía? Esto actualizará su fecha de inicio y vencimiento a partir de hoy.');" style="display:inline;">
-                            <button type="submit" class="btn-renew" title="Renovar" th:if="${membership.status.name() != ''}">
-                                <i class="fas fa-sync-alt"></i> <span class="action-text">Renovar</span>
-                            </button>
-                        </form>
-                        <a href="#" class="btn-receipt" title="Generar Recibo" onclick="alert('Funcionalidad de generar recibo en desarrollo.');">
-                            <i class="fas fa-receipt"></i> <span class="action-text">Recibo</span>
-                        </a>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(memberships)}">
-                    <td colspan="9" style="text-align: center;">No hay membresías registradas.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</section>
+<script th:src="@{/js/admin-dashboard.js}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const mainContent = document.getElementById('mainContent');
 
+    if (sidebarToggle && sidebar && mainContent) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('shifted');
+        });
+    }
+});
+
+function generateReceipt(membershipId, userName, amount) {
+    // Simular generación de recibo
+    const receiptData = {
+        membershipId: membershipId,
+        userName: userName,
+        amount: amount,
+        date: new Date().toLocaleDateString(),
+        receiptNumber: 'R-' + Math.random().toString(36).substr(2, 9).toUpperCase()
+    };
+    
+    // Crear contenido del recibo
+    const receiptContent = `
+        <div style="font-family: Arial, sans-serif; max-width: 400px; margin: 20px auto; padding: 20px; border: 1px solid #ccc;">
+            <h2 style="text-align: center; color: #333;">KRONOS GYM</h2>
+            <h3 style="text-align: center; color: #667eea;">RECIBO DE PAGO</h3>
+            <hr>
+            <p><strong>Número de Recibo:</strong> ${receiptData.receiptNumber}</p>
+            <p><strong>Fecha:</strong> ${receiptData.date}</p>
+            <p><strong>Cliente:</strong> ${receiptData.userName}</p>
+            <p><strong>Membresía ID:</strong> ${receiptData.membershipId}</p>
+            <p><strong>Monto:</strong> $${receiptData.amount}</p>
+            <hr>
+            <p style="text-align: center; font-size: 12px; color: #666;">
+                Gracias por su pago<br>
+                Kronos Gym - Sistema de Gestión
+            </p>
+        </div>
+    `;
+    
+    // Abrir ventana con el recibo
+    const receiptWindow = window.open('', '_blank', 'width=500,height=600');
+    receiptWindow.document.write(receiptContent);
+    receiptWindow.document.close();
+    receiptWindow.print();
+}
+</script>
 </body>
 </html>

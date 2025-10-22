@@ -10,9 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +23,7 @@ import com.gymmanagement.gymapp.repository.RoleRepository;
 import com.gymmanagement.gymapp.repository.UserRepository;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -38,22 +36,7 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        if (!StringUtils.hasText(email)) {
-            throw new UsernameNotFoundException("El email no puede ser nulo o vacío.");
-        }
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                user.isEnabled(),
-                true, true, true,
-                user.getRoles()
-        );
-    }
 
     @Transactional
     public User saveUser(UserRegistrationDto registrationDto) {
@@ -119,12 +102,20 @@ public class UserService implements UserDetailsService {
         return userRepository.findAll();
     }
 
+    public List<User> findActiveUsers() {
+        return userRepository.findByEnabledTrue();
+    }
+
     public Page<User> searchUsers(String keyword, Pageable pageable) {
         String actualKeyword = keyword != null ? keyword : "";
         return userRepository.searchUsers(actualKeyword, pageable);
     }
 
     public Optional<User> findUserById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    public Optional<User> findById(Long id) {
         return userRepository.findById(id);
     }
 

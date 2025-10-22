@@ -1,132 +1,384 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{admin/layout-admin}">
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${membership.id == null ? 'Registrar Membresía' : 'Editar Membresía'} + ' - Kronos Gym'"></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${#strings.defaultString(pageTitle, 'Kronos Gym - Nueva Membresía')}">Kronos Gym - Nueva Membresía</title>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}">
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" th:href="@{/css/admin-dashboard.css}">
+    <th:block th:if="${pageCss}">
+        <link rel="stylesheet" th:href="${pageCss}">
+    </th:block>
+
+    <style>
+        .form-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-title {
+            color: #333;
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .form-subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .plan-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .plan-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .plan-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
+<div class="dashboard-wrapper">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img th:src="@{/img/logo-white.png}" alt="Kronos Logo" class="sidebar-logo">
+            <h3 class="app-title">Admin</h3>
+            <button class="toggle-sidebar-btn" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <ul>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/dashboard') ? 'active' : ''}">
+                    <a href="/admin/dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt icon"></i>
+                        <span class="text">Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/users') ? 'active' : ''}">
+                    <a href="/admin/users" class="nav-link">
+                        <i class="fas fa-users icon"></i>
+                        <span class="text">Gestión de Usuarios</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/memberships') ? 'active' : ''}">
+                    <a href="/admin/memberships" class="nav-link">
+                        <i class="fas fa-credit-card icon"></i>
+                        <span class="text">Gestión de Membresías</span>
+                    </a>
+                </li>
+                <li class="nav-item" th:classappend="${currentUri.startsWith('/admin/attendance') ? 'active' : ''}">
+                    <a href="/admin/attendance" class="nav-link">
+                        <i class="fas fa-clipboard-check icon"></i>
+                        <span class="text">Control de Asistencia</span>
+                    </a>
+                </li>
+                <li class="nav-item logout">
+                    <a th:href="@{/logout}" class="nav-link">
+                        <i class="fas fa-sign-out-alt icon"></i>
+                        <span class="text">Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </aside>
 
-<section th:fragment="content" class="dashboard-section">
-    <h3 th:text="${membership.id == null ? 'Registrar Nueva Membresía' : 'Editar Membresía'}"></h3>
+    <div class="main-content" id="mainContent">
+        <header class="navbar">
+            <div class="navbar-left">
+                <h2 th:text="${#strings.defaultString(navbarTitle, 'Nueva Membresía')}">Nueva Membresía</h2>
+            </div>
+            <div class="navbar-right">
+                <span class="user-info" sec:authorize="isAuthenticated()">
+                    <i class="fas fa-user-circle"></i> Bienvenido, <span sec:authentication="name"></span>!
+                </span>
+            </div>
+        </header>
 
-    <div th:if="${errorMessage}" class="alert error">
-        <i class="fas fa-exclamation-circle"></i> <span th:text="${errorMessage}"></span>
+        <div class="form-container">
+            <!-- Alertas -->
+            <div th:if="${success}" class="alert success">
+                <i class="fas fa-check-circle"></i>
+                <span th:text="${success}"></span>
+            </div>
+            <div th:if="${error}" class="alert error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span th:text="${error}"></span>
+            </div>
+
+            <div class="form-card">
+                <div class="form-header">
+                    <h3 class="form-title">
+                        <i class="fas fa-plus-circle"></i> Nueva Membresía
+                    </h3>
+                    <p class="form-subtitle">Complete los datos para crear una nueva membresía</p>
+                </div>
+
+                <form th:action="@{/admin/memberships/save}" method="post" th:object="${membershipDto}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="userId">Usuario *</label>
+                            <select id="userId" name="userId" class="form-control" required>
+                                <option value="">Seleccione un usuario...</option>
+                                <option th:each="user : ${users}" 
+                                        th:value="${user.id}" 
+                                        th:text="${user.firstName + ' ' + user.lastName + ' (' + user.username + ')'}">
+                                    Usuario
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="membershipPlanId">Plan de Membresía *</label>
+                            <select id="membershipPlanId" name="membershipPlanId" class="form-control" required>
+                                <option value="">Seleccione un plan...</option>
+                                <option th:each="plan : ${plans}" 
+                                        th:value="${plan.id}" 
+                                        th:text="${plan.name + ' - $' + plan.price + ' (' + plan.durationMonths + ' meses)'}">
+                                    Plan
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="startDate">Fecha de Inicio *</label>
+                            <input type="date" id="startDate" name="startDate" class="form-control" 
+                                   th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="endDate">Fecha de Vencimiento *</label>
+                            <input type="date" id="endDate" name="endDate" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="amount">Monto *</label>
+                            <input type="number" id="amount" name="amount" class="form-control" 
+                                   step="0.01" min="0" placeholder="0.00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="paymentMethod">Método de Pago *</label>
+                            <select id="paymentMethod" name="paymentMethod" class="form-control" required>
+                                <option value="">Seleccione método de pago...</option>
+                                <option value="CASH">Efectivo</option>
+                                <option value="CARD">Tarjeta</option>
+                                <option value="TRANSFER">Transferencia</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="status">Estado *</label>
+                        <select id="status" name="status" class="form-control" required>
+                            <option value="">Seleccione estado...</option>
+                            <option value="ACTIVE">Activa</option>
+                            <option value="PENDING_PAYMENT">Pendiente de Pago</option>
+                            <option value="EXPIRED">Vencida</option>
+                            <option value="CANCELLED">Cancelada</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <a th:href="@{/admin/memberships}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Membresía
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    <div class="form-container">
-        <form th:action="@{/admin/memberships/save}" th:object="${membership}" method="post">
-            <input type="hidden" th:field="*{id}" />
-
-            <div class="form-group">
-                <label for="userId">Cliente:</label>
-                <select id="userId" th:field="*{userId}" required>
-                    <option value="">-- Seleccione un cliente --</option>
-                    <option th:each="user : ${users}" th:value="${user.id}" th:text="${user.firstName + ' ' + user.lastName + ' (' + user.username + ')'}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="membershipPlanId">Plan de Membresía:</label>
-                <select id="membershipPlanId" th:field="*{membershipPlanId}" required>
-                    <option value="">-- Seleccione un plan --</option>
-                    <option th:each="plan : ${membershipPlans}" th:value="${plan.id}" th:text="${plan.name + ' - $' + #numbers.formatDecimal(plan.price, 1, 2) + ' (' + plan.durationMonths + ' meses)'}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('membershipPlanId')}" th:errors="*{membershipPlanId}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="startDate">Fecha de Inicio:</label>
-                <input type="date" id="startDate" th:field="*{startDate}" required onchange="calculateEndDate()">
-                <span th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="endDate">Fecha de Vencimiento:</label>
-                <input type="date" id="endDate" th:field="*{endDate}" readonly required>
-                <span th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="amount">Monto:</label>
-                <input type="number" id="amount" th:field="*{amount}" step="0.01" min="0.01" required>
-                <span th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="status">Estado:</label>
-                <select id="status" th:field="*{status}" required>
-                    <option value="">-- Seleccione un estado --</option>
-                    <option th:each="status : ${membershipStatuses}" th:value="${status}" th:text="${status}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('status')}" th:errors="*{status}" class="error-message"></span>
-            </div>
-
-            <div class="form-group">
-                <label for="paymentMethod">Método de Pago:</label>
-                <select id="paymentMethod" th:field="*{paymentMethod}" required>
-                    <option value="">-- Seleccione un método --</option>
-                    <option th:each="method : ${paymentMethods}" th:value="${method}" th:text="${method}"></option>
-                </select>
-                <span th:if="${#fields.hasErrors('paymentMethod')}" th:errors="*{paymentMethod}" class="error-message"></span>
-            </div>
-
-            <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    <i class="fas fa-save"></i> Guardar Membresía
-                </button>
-                <a th:href="@{/admin/memberships}" class="btn-cancel">
-                    <i class="fas fa-times-circle"></i> Cancelar
-                </a>
-            </div>
-        </form>
-    </div>
-</section>
+</div>
 
 <script th:src="@{/js/admin-dashboard.js}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const membershipPlanIdSelect = document.getElementById('membershipPlanId');
-        const startDateInput = document.getElementById('startDate');
+document.addEventListener('DOMContentLoaded', function() {
+    // Sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const mainContent = document.getElementById('mainContent');
 
-        if (membershipPlanIdSelect.value && startDateInput.value) {
-            calculateEndDate();
-        }
-
-        membershipPlanIdSelect.addEventListener('change', calculateEndDate);
-    });
-
-    function calculateEndDate() {
-        const membershipPlanId = document.getElementById('membershipPlanId').value;
-        const startDateStr = document.getElementById('startDate').value;
-        const endDateInput = document.getElementById('endDate');
-        const amountInput = document.getElementById('amount');
-
-        if (membershipPlanId && startDateStr) {
-            const startDate = new Date(startDateStr + 'T00:00:00');
-
-            fetch(`/admin/memberships/getPlanDuration/${membershipPlanId}`)
-                .then(response => response.json())
-                .then(durationMonths => {
-                    const endDate = new Date(startDate);
-                    endDate.setMonth(startDate.getMonth() + durationMonths);
-                    endDate.setDate(endDate.getDate() - 1);
-                    endDateInput.value = endDate.toISOString().split('T')[0];
-                })
-                .catch(() => endDateInput.value = '');
-
-            fetch(`/admin/memberships/getPlanPrice/${membershipPlanId}`)
-                .then(response => response.json())
-                .then(price => amountInput.value = parseFloat(price).toFixed(2))
-                .catch(() => amountInput.value = '0.00');
-        } else {
-            endDateInput.value = '';
-            amountInput.value = '';
-        }
+    if (sidebarToggle && sidebar && mainContent) {
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('shifted');
+        });
     }
-</script>
 
+    // Auto-calculate end date based on plan selection
+    const membershipPlanSelect = document.getElementById('membershipPlanId');
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    const amountInput = document.getElementById('amount');
+
+    if (membershipPlanSelect && startDateInput && endDateInput && amountInput) {
+        membershipPlanSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const planText = selectedOption.text;
+            
+            // Extract price from plan text (assuming format: "Plan - $price (months months)")
+            const priceMatch = planText.match(/\$(\d+(?:\.\d{2})?)/);
+            if (priceMatch) {
+                amountInput.value = priceMatch[1];
+            }
+            
+            // Extract duration from plan text
+            const durationMatch = planText.match(/\((\d+)\s+meses?\)/);
+            if (durationMatch && startDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(startDate);
+                endDate.setMonth(endDate.getMonth() + parseInt(durationMatch[1]));
+                endDateInput.value = endDate.toISOString().split('T')[0];
+            }
+        });
+
+        startDateInput.addEventListener('change', function() {
+            if (membershipPlanSelect.value && this.value) {
+                membershipPlanSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+});
+</script>
 </body>
 </html>

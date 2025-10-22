@@ -10,68 +10,47 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
-import com.gymmanagement.gymapp.service.UserService; // Asegúrate de que esta importación esté
+import com.gymmanagement.gymapp.service.CustomUserDetailsService;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler; // Inyecta el handler
-
-    // Constructor para inyectar CustomAuthenticationSuccessHandler
-    public SecurityConfig(CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler) {
-        this.customAuthenticationSuccessHandler = customAuthenticationSuccessHandler;
-    }
-
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider(UserService userService) {
+    public DaoAuthenticationProvider authenticationProvider(CustomUserDetailsService userDetailsService) {
         DaoAuthenticationProvider auth = new DaoAuthenticationProvider();
-        auth.setUserDetailsService(userService);
+        auth.setUserDetailsService(userDetailsService);
         auth.setPasswordEncoder(passwordEncoder());
         return auth;
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, DaoAuthenticationProvider authenticationProvider) throws Exception {
         http
-            .authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(
-                    "/",
-                    "/css/**",
-                    "/js/**",
-                    "/img/**",
-                    "/login",
-                    "/register",
-                    "/error"
-                ).permitAll()
-                // ¡NUEVO: Protección de rutas por rol!
-                .requestMatchers("/admin/**").hasRole("ADMIN") // Solo ADMIN puede acceder a /admin/**
-                .requestMatchers("/client/**").hasRole("CLIENT") // Solo CLIENT puede acceder a /client/**
+            .authenticationProvider(authenticationProvider)
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/css/**", "/js/**", "/img/**", "/webjars/**", "/login").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/client/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
                 .loginPage("/login")
-                .successHandler(customAuthenticationSuccessHandler) // Usa tu handler personalizado
-                .failureUrl("/login?error")
+                .defaultSuccessUrl("/admin/dashboard", true)
                 .permitAll()
             )
             .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
                 .logoutSuccessUrl("/login?logout")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            .csrf(csrf -> csrf
-                .disable()
-            );
+            .csrf(csrf -> csrf.disable());
+
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
